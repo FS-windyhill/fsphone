@@ -219,11 +219,13 @@ body {
 .message-wrapper.user .message-bubble {
     background: var(--message-bg-user);
     border: 1.3px solid #e8e8e800;
+    border-bottom-right-radius: 4px !important;
 }
 
 .message-wrapper.ai .message-bubble {
     background: var(--message-bg-ai);
     border: 1.3px solid #e8e8e8;
+    border-bottom-left-radius: 4px !important;
 }
 
 
@@ -370,6 +372,7 @@ html, body {
     0%, 100% { transform: translateY(0); }
     50%      { transform: translateY(-3px); }
 }
+
 
 
 
