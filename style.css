@@ -269,7 +269,7 @@ body {
 @keyframes slideInUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(10px);
     }
     to {
         opacity: 1;
@@ -284,8 +284,13 @@ body {
   - 动画曲线是 ease-out，有一种“先快后慢”的缓动感，更自然
   - forwards 会让动画停留在结束时的状态
 */
-.message-wrapper.newly-added {
-    animation: slideInUp 0.3s ease-out forwards;
+.message-wrapper {
+    opacity: 0;
+    animation: slideInUp 0.35s ease-out 0.05s forwards;
+}
+
+@keyframes slideInUp {
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* (可选) 让重Roll按钮也优雅地出现 */
@@ -365,6 +370,7 @@ html, body {
     0%, 100% { transform: translateY(0); }
     50%      { transform: translateY(-3px); }
 }
+
 
 
 
