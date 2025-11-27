@@ -311,7 +311,7 @@ body {
     display: flex;
     flex-direction: column;
     height: 100vh;                  /* 只有这一行保留或加上 */
-    height: 100dvh;                 /* 推荐加上这行，适配 iPhone 刘海屏/动态岛 */
+    height: 70dvh;                 /* 推荐加上这行，适配 iPhone 刘海屏/动态岛 */
     border-radius: 0 ;   /* 确保没有圆角 */
     border: none;
     box-shadow: none;
@@ -372,6 +372,7 @@ html, body {
     0%, 100% { transform: translateY(0); }
     50%      { transform: translateY(-3px); }
 }
+
 
 
 
