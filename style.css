@@ -779,6 +779,8 @@ body {
     cursor: pointer;
 }
 
+#main-cancel { background: #d0d0d0; color: #666; }
+#main-confirm { background: var(--primary-color); color: white; }
 #modal-cancel { background: #d0d0d0; color: #666; }
 #modal-save { background: var(--primary-color); color: white; }
 
@@ -834,9 +836,9 @@ body {
 .small-btn {
     padding: 6px 10px;
     font-size: 12px;
-    background: var(--primary-color);
-    color: white;
-    border: none;
+    background: #ededed;
+    color: rgb(82, 82, 82);
+    border: 1px solid rgba(100, 100, 100, 0.6);
     border-radius: 8px;
     cursor: pointer;
 }
@@ -983,26 +985,6 @@ body {
     transition: all 0.2s;
 }
 
-#main-cancel {
-    background: rgba(0,0,0,0.1);
-    color: #666;
-}
-
-#main-cancel:hover {
-    background: rgba(0,0,0,0.2);
-}
-
-#main-confirm {
-    background: var(--primary-color);
-    color: white;
-    font-weight: 600;
-}
-
-#main-confirm:hover {
-    background: #ffaaaa;
-    transform: translateY(-1px);
-}
-
 /* 导入导出 */
 /* 隐藏原生的文件输入框，但保持可点击 */
 #file { display: none; }
@@ -1019,4 +1001,130 @@ body {
     margin-right: 8px;
 }
 
+/* ========== 设置中心标题美化 ========== */
+.settings-title {
+    margin: 5px 0 20px 0;
+    text-align: center;
+    font-size: 22px;
+    color: #333;
+    font-weight: 600;
+}
 
+.settings-section-title {
+    margin: 28px 0 12px 0;
+    font-size: 17px;
+    color: #555;
+    font-weight: 500;
+    padding-left: 4px;
+}
+
+/* ========== API 设置区通用卡片 ========== */
+.api-input-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px;
+    padding: 16px 18px !important;
+}
+
+.api-label {
+    font-size: 14.5px;
+    color: #555;
+    font-weight: 500;
+    width: 80px;
+}
+
+/* 输入框统一样式 */
+.setting-input {
+    padding: 12px 14px;
+    border: 1.5px solid rgba(0,0,0,0.12);
+    border-radius: 12px;
+    font-size: 15px;
+    background: rgba(255,255,255,0.9);
+    transition: all 0.2s;
+}
+
+.setting-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0,102,255,0.15);
+    background: white;
+}
+
+/* ========== 模型选择那一行 ========== */
+/* 5. 模型选择卡片样式 (修正对齐问题) */
+
+.main-option.model-card {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px 24px;
+    border-radius: 20px;
+    display: flex; /* 确保它是一个flex容器 */
+    flex-direction: column; /* 将主轴改为垂直方向 */
+    align-items: flex-start; /* 新增：让所有子项在水平方向上从左侧开始对齐 */
+    gap: 12px; /* 可以用 gap 来控制子项之间的垂直间距 */
+}
+
+
+/* “模型”标签的样式 */
+.api-label2 {
+    font-size: 14.5px;
+    color: #555;
+    font-weight: 500;
+    /* width: 80px; 可以保留也可以移除，因为现在对齐了，宽度不再是问题 */
+    /* align-items: flex-start; 这个属性在这里无效，可以删除 */
+    box-sizing: border-box; /* 加上这个是个好习惯 */
+    padding-right: 12px; /* 可以加一点右内边距，让它和下面的输入框左侧对齐得更舒服 */
+}
+
+
+/* 下拉框和按钮所在的行 */
+.model-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center; /* 垂直居中对齐下拉框和按钮 */
+    width: 100%; /* 让这一行撑满整个卡片宽度 */
+}
+
+/* 下拉框样式，让它可以伸展 */
+#custom-model-select.model-select {
+    flex-grow: 1; /* 占据 .model-row 里的剩余空间 */
+    /* width: 100%; 在 flex-grow: 1 的情况下，这个可以省略 */
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #f9f9f9;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px 12px;
+}
+
+/* 按钮样式 */
+#fetch-models-btn.fetch-models-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    background: #ea656d;
+    color: white;
+    flex-shrink: 0; /* 防止按钮在空间不足时被压缩 */
+    transition: background-color 0.2s ease;
+}
+
+#fetch-models-btn.fetch-models-btn:hover {
+    background: #d9535b;
+}
+
+/* 状态文本样式 */
+#model-fetch-status.model-status {
+    /* margin-top: 12px; 由于父级使用了 gap，这个可以移除 */
+    font-size: 12px;
+    color: #888;
+    min-height: 1.5em; 
+    width: 100%; /* 确保它也撑满宽度并靠左 */
+}
