@@ -12,8 +12,13 @@ const GLOBAL_SYSTEM_PROMPT = `
 `; 
 // <--- 这里你可以随意修改你的后台指令
 
-const STORAGE_KEY = 'fs_multi_char_data_v1';
+const STORAGE_KEY = 'teleWindy_char_data_v1';
 const OLD_STORAGE_KEY = 'octopus_coach_chat_history'; 
+
+// ★★★ 新增：用户头像 + 壁纸持久化 ★★★
+let userAvatar = localStorage.getItem('fs_user_avatar') || 'https://api.dicebear.com/7.x/avataaars/svg?seed=user'; // 默认用户头像
+let currentWallpaper = localStorage.getItem('fs_wallpaper') || 'wallpaper.jpg'; // 默认壁纸
+
 
 // --- 全局变量 ---
 let contacts = [];           
@@ -73,6 +78,9 @@ function init() {
 
     saveData();
     renderContactList();
+    // ★★★ 初始化用户头像和壁纸 ★★★
+    applyUserAvatar();
+    applyWallpaper();
 }
 
 function saveData() {
@@ -89,18 +97,17 @@ function renderContactList() {
         item.className = 'contact-item';
         
         let avatarHtml = '';
-        if (contact.avatar.startsWith('http')) {
-            avatarHtml = `<img src="${contact.avatar}" class="contact-avatar">`;
+        if (contact.avatar.startsWith('data:') || contact.avatar.startsWith('http')) {
+            avatarHtml = `<img src="${contact.avatar}" class="contact-avatar" onerror="this.src=''; this.outerHTML='<div class=contact-avatar>${contact.avatar}</div>'">`;
         } else {
-            avatarHtml = `<div class="contact-avatar">${contact.avatar}</div>`;
+            avatarHtml = `<div class="contact-avatar">${contact.avatar || '🤔'}</div>`;
         }
 
         let lastMsg = "暂无消息";
         const realMsgs = contact.history.filter(m => m.role !== 'system');
         if (realMsgs.length > 0) {
-            lastMsg = realMsgs[realMsgs.length - 1].content;
-        } else {
-            lastMsg = contact.prompt; 
+            const last = realMsgs[realMsgs.length - 1];
+            lastMsg = last.content.length > 30 ? last.content.slice(0, 30) + '…' : last.content;
         }
 
         item.innerHTML = `
@@ -166,18 +173,21 @@ document.getElementById('back-btn').addEventListener('click', () => {
 // 3. 聊天核心逻辑 (★ 重点修改区域 ★)
 // ===========================
 
+// 替换你原来的整个 addMessageToUI 函数
 function addMessageToUI(text, sender, avatarUrl) {
     const wrapper = document.createElement('div');
     wrapper.className = `message-wrapper ${sender}`;
 
     let avatarHtml;
     if (sender === 'user') {
-        avatarHtml = `<img class="avatar" src="user.jpg" alt="User">`; 
+        // 使用全局 userAvatar（支持 base64 和 url）
+        avatarHtml = `<img class="avatar" src="${userAvatar}" alt="User" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=user'">`;
     } else {
-        if (avatarUrl && avatarUrl.startsWith('http')) {
-            avatarHtml = `<img class="avatar" src="${avatarUrl}">`;
+        // AI 角色头像
+        if (avatarUrl && (avatarUrl.startsWith('http') || avatarUrl.startsWith('data:'))) {
+            avatarHtml = `<img class="avatar" src="${avatarUrl}" onerror="this.src='🦑'; this.style.fontSize='24px'; this.style.background='#fff'; this.style.display='flex'; this.style.alignItems='center'; this.style.justifyContent='center';">`;
         } else {
-            avatarHtml = `<div class="avatar" style="background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;">${avatarUrl}</div>`;
+            avatarHtml = `<div class="avatar" style="background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;">${avatarUrl || '🤖'}</div>`;
         }
     }
 
@@ -321,6 +331,40 @@ function updateRerollButton() {
     rerollBtn.disabled = !hasHistory;
 }
 
+// ★★★ 新增：应用用户头像
+function applyUserAvatar() {
+    const preview = document.getElementById('user-avatar-preview');
+    if (preview) {
+        if (userAvatar.startsWith('data:') || userAvatar.startsWith('http')) {
+            preview.src = userAvatar;
+        } else {
+            preview.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=user';
+            preview.alt = userAvatar; // 显示 emoji
+            preview.style.fontSize = '36px';
+            preview.style.background = '#eee';
+        }
+    }
+}
+
+// ★★★ 新增：应用壁纸
+function applyWallpaper() {
+    document.body.style.backgroundImage = `url('${currentWallpaper}')`;
+    if (currentWallpaper === 'wallpaper.jpg') {
+        document.body.style.backgroundColor = '#f2f2f2'; // 备用色
+    }
+}
+
+// ★★★ 新增：读取文件为 base64
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+
 // ===========================
 // 4. 弹窗与角色管理 (保持不变)
 // ===========================
@@ -328,6 +372,17 @@ function updateRerollButton() {
 function openModal(contactId) {
     editingId = contactId;
     modalOverlay.classList.remove('hidden');
+
+    // ★★★ 修复 Bug 3：JS 强制设置滚动条 ★★★
+    // 假设 modal-overlay 里的第一个子元素就是你的弹窗白框
+    // 如果你的结构不一样，可能需要把 .firstElementChild 改成具体的 ID
+    const modalContent = modalOverlay.firstElementChild;
+    if (modalContent) {
+        modalContent.style.maxHeight = '85vh'; // 限制最大高度为屏幕的 85%
+        modalContent.style.overflowY = 'auto'; // 内容超长时显示滚动条
+        modalContent.style.borderRadius = '12px'; // 顺手加个圆角，好看点
+    }
+    // ★★★ 修复结束 ★★★
     
     const delBtn = document.getElementById('modal-delete');
     const clearBtn = document.getElementById('modal-clear-history');
@@ -337,6 +392,15 @@ function openModal(contactId) {
         document.getElementById('modal-title').innerText = '设置角色';
         inputName.value = c.name;
         inputAvatar.value = c.avatar;
+        const preview = document.getElementById('edit-avatar-preview');
+        if (c.avatar.startsWith('data:') || c.avatar.startsWith('http')) {
+            preview.src = c.avatar;
+        } else {
+            preview.src = '';
+            preview.alt = c.avatar;
+            preview.style.fontSize = '36px';
+            preview.style.background = '#eee';
+        }
         inputPrompt.value = c.prompt;
         
         delBtn.style.display = 'block';
@@ -354,7 +418,15 @@ function openModal(contactId) {
 
 document.getElementById('modal-save').addEventListener('click', () => {
     const name = inputName.value.trim() || '未命名';
-    const avatar = inputAvatar.value.trim() || '🙂';
+    let avatar = inputAvatar.value.trim();
+    
+    // 优先使用预览图的 base64（即使用户没改文本框）
+    const previewEl = document.getElementById('edit-avatar-preview');
+    if (previewEl && previewEl.src && previewEl.src.startsWith('data:')) {
+        avatar = previewEl.src;
+    }
+    if (!avatar || avatar === '🦑') avatar = '🙂';
+
     const prompt = inputPrompt.value.trim();
 
     if (editingId) {
@@ -363,7 +435,11 @@ document.getElementById('modal-save').addEventListener('click', () => {
             c.name = name;
             c.avatar = avatar;
             c.prompt = prompt;
-            if (currentContactId === editingId) chatTitle.innerText = name;
+            
+            // 立即刷新标题
+            if (currentContactId === editingId) {
+                chatTitle.innerText = name;
+            }
         }
     } else {
         contacts.push({
@@ -377,7 +453,12 @@ document.getElementById('modal-save').addEventListener('click', () => {
     
     saveData();
     modalOverlay.classList.add('hidden');
-    if (!editingId) renderContactList(); 
+    
+    // ★★★ 关键修复：保存后立刻刷新 UI ★★★
+    renderContactList();
+    if (currentContactId) {
+        enterChat(currentContactId); // 强制刷新当前聊天（头像立刻更新！）
+    }
 });
 
 document.getElementById('modal-delete').addEventListener('click', () => {
@@ -420,5 +501,107 @@ taskInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') handleSend(false);
 });
 rerollBtn.addEventListener('click', () => handleSend(true));
+
+// ===========================
+// 头像上传 + 壁纸设置逻辑
+// ===========================
+
+// 角色头像上传
+document.getElementById('edit-avatar-upload-btn')?.addEventListener('click', () => {
+    document.getElementById('edit-avatar-file').click();
+});
+
+document.getElementById('edit-avatar-file')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+        const dataUrl = await readFileAsDataURL(file);
+        document.getElementById('edit-avatar-preview').src = dataUrl;
+        document.getElementById('edit-avatar').value = dataUrl; // 同步到文本框
+    } catch (err) {
+        alert('图片读取失败');
+    }
+});
+
+// 用户头像上传
+document.getElementById('user-avatar-upload-btn')?.addEventListener('click', () => {
+    document.getElementById('user-avatar-file').click();
+});
+
+document.getElementById('user-avatar-file')?.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+        const dataUrl = await readFileAsDataURL(file);
+        userAvatar = dataUrl;
+        localStorage.setItem('fs_user_avatar', dataUrl);
+        document.getElementById('user-avatar-preview').src = dataUrl;
+        applyUserAvatar();
+        // 刷新当前聊天中的用户头像
+        if (currentContactId) {
+            enterChat(currentContactId);
+        }
+    } catch (err) {
+        alert('图片读取失败');
+    }
+});
+
+// 1. 绑定主页的设置按钮 (请确认你的HTML里主页那个齿轮按钮ID是不是 'main-settings-btn')
+// 如果你的按钮叫其他名字，请修改下面这行
+const mainSettingsBtn = document.getElementById('main-settings-btn'); 
+if (mainSettingsBtn) {
+    mainSettingsBtn.addEventListener('click', () => {
+        openMainModal(); // 主页直接点，直接开壁纸弹窗
+    });
+}
+
+// 2. 这是一个专门打开壁纸弹窗的函数
+function openMainModal() {
+    document.getElementById('main-modal').classList.remove('hidden');
+}
+
+
+// 主页设置按钮（齿轮）
+document.getElementById('main-settings-btn').addEventListener('click', openMainModal);
+
+
+// 关闭全局壁纸设置
+function closeMainModal() {
+    document.getElementById('main-modal').classList.add('hidden');
+    document.getElementById('wallpaper-preview').classList.add('hidden');
+    document.getElementById('wallpaper-file-input').value = '';
+}
+
+// 选择图片后预览
+document.getElementById('wallpaper-file-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+        const dataUrl = await readFileAsDataURL(file);
+        document.getElementById('wallpaper-preview-img').src = dataUrl;
+        document.getElementById('wallpaper-preview').classList.remove('hidden');
+    } catch (err) {
+        alert('图片读取失败');
+    }
+});
+
+// 壁纸确认按钮
+document.getElementById('main-confirm').addEventListener('click', () => {
+    const fileInput = document.getElementById('wallpaper-file-input');
+    if (fileInput.files && fileInput.files[0]) {
+        const dataUrl = document.getElementById('wallpaper-preview-img').src;
+        currentWallpaper = dataUrl;
+        localStorage.setItem('fs_wallpaper', dataUrl);
+    } else {
+        currentWallpaper = 'wallpaper.jpg';
+        localStorage.setItem('fs_wallpaper', 'wallpaper.jpg');
+    }
+    applyWallpaper();
+    closeMainModal();
+});
+
+// 取消壁纸设置
+document.getElementById('main-cancel').addEventListener('click', closeMainModal);
+
 
 window.addEventListener('load', init);

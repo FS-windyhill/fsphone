@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>FS小手机</title>
+    <title>TeleWindy</title>
     
     <!-- PWA 相关 -->
     <link rel="manifest" href="/manifest.webmanifest">
@@ -26,7 +26,7 @@
                 <!-- 右上角添加按钮 -->
                 <button id="add-contact-btn" class="header-icon-btn right" title="添加新角色">＋</button>
                 <!-- 自定义壁纸按钮 -->
-                <button id="wallpaper-settings-btn" class="header-icon-btn left"  title="全局设置">⚙</button>
+                <button id="main-settings-btn" class="header-icon-btn left"  title="全局设置">⚙</button>
             </header>
             
             <div id="contact-list-container">
@@ -114,30 +114,30 @@
                 <button id="modal-delete" class="danger-btn">【危险操作】删除此角色</button>
             </div>
 
-            <!-- 新增：壁纸选择弹窗（复用 modal-overlay 的结构，JS 里会切换内容） -->
-            <div id="wallpaper-modal" class="hidden">
-                <div class="modal glass-panel" style="max-height: 90vh;">
-                    <h2>自定义壁纸</h2>
-                    <div class="wallpaper-options">
-                        <label class="wallpaper-option">
-                            <input type="radio" name="wallpaper" value="default" checked>
-                            <span>默认壁纸</span>
-                        </label>
-                        <label class="wallpaper-option upload">
-                            <input type="file" id="wallpaper-file-input" accept="image/*">
-                            <span>📁 从相册选择本地图片</span>
-                        </label>
-                        <div id="wallpaper-preview" class="wallpaper-preview hidden">
-                            <img id="wallpaper-preview-img" src="" alt="预览">
-                        </div>
-                    </div>
-                    <div class="modal-buttons" style="margin-top: 20px;">
-                        <button id="wallpaper-cancel">取消</button>
-                        <button id="wallpaper-confirm" class="primary">应用</button>
-                    </div>
+        </div>
+    </div>
+
+    <!-- 新增：壁纸选择弹窗（复用 modal-overlay 的结构，JS 里会切换内容） -->
+    <div id="main-modal" class="modal-overlay hidden">
+        <div class="modal glass-panel" style="max-height: 90vh;">
+            <h2>自定义壁纸</h2>
+            <div class="main-options">
+                <label class="main-option">
+                    <input type="radio" name="wallpaper" value="default" checked>
+                    <span>默认壁纸</span>
+                </label>
+                <label class="wallpaper-option upload">
+                    <input type="file" id="wallpaper-file-input" accept="image/*">
+                    <span>📁 从相册选择本地图片</span>
+                </label>
+                <div id="wallpaper-preview" class="wallpaper-preview hidden">
+                    <img id="wallpaper-preview-img" src="" alt="预览">
                 </div>
             </div>
-
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button id="main-cancel">取消</button>
+                <button id="main-confirm" class="primary">应用</button>
+            </div>
         </div>
     </div>
 
