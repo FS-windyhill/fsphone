@@ -1,12 +1,9 @@
 // --- 配置区 ---
-const API_URL = 'https://api.siliconflow.cn/v1/chat/completions';
-const MODEL = "zai-org/GLM-4.6"; 
+const API_URL = 'https://geminipolling-gv1p.onrender.com/v1/chat/completions';
+const MODEL = "gemini-2.5-pro"; 
 
 const API_KEYS = [
-    'sk-zjrwnikmirbgzteakyyrqtlwmkglwpapqcgpmgjbyupxhwzd',  // 你现在的这个
-    'sk-sepmltdwpfvlnsojvawflghrznpqxzlrulkortjnyxxgtisb', 
-    'sk-fedqospwlixieizvwrqztqxvianftmkpcdtkpmsrbodoxvds',
-    'sk-tskbokglzxesqbqbmuevlocnahlpagnlhaonubfmjhuflnyk',
+    'geminiyl',
     // 想加多少加多少，随便复制粘贴
 ];
 
@@ -261,7 +258,7 @@ async function handleSend(isReroll = false) {
         if (!lastUserMsg) return; 
         userText = lastUserMsg.content;
         
-        if (chatMessages.lastElementChild?.classList.contains('ai')) {
+        while (chatMessages.lastElementChild?.classList.contains('ai')) {
             chatMessages.removeChild(chatMessages.lastElementChild);
         }
         while(contact.history.length > 0 && contact.history[contact.history.length-1].role === 'assistant') {

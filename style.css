@@ -194,7 +194,7 @@ body {
 
 .message-wrapper.user .message-bubble {
     background: var(--message-bg-user);
-    border: 1px solid var(--message-border-user);
+    border: 0.7px solid var(--message-border-user);
     border-top-right-radius: 3px;
 }
 
