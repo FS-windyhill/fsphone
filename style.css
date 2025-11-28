@@ -85,8 +85,8 @@ body {
     color: #818181;
     
     /* --- 外观样式 --- */
-    border: 1.5px solid #717171ad;
-    background: rgba(236, 236, 236, 0.873);
+    border: 1px solid #71717181;
+    background: rgba(236, 236, 236, 0.568);
     
     /* --- 5. iOS 专用修复 (防止苹果手机加默认按钮样式) --- */
     -webkit-appearance: none;
@@ -163,9 +163,19 @@ body {
     transition: background-color 0.2s;
 }
 
-#send-button:hover {
-    background-color: #ff8383;
+#reroll-footer-btn {
+    width: 30px;
+    height: 30px;
+    border:1px solid rgba(115, 115, 115, 0.66);
+    border-radius: 50%;
+    font-size: 15px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    background: rgba(188, 188, 188, 0.6);
+    color: rgb(97, 97, 97);
 }
+
 
 
 @keyframes spin {
@@ -238,39 +248,6 @@ body {
     border-top-left-radius: 3px;
 }
 
-
-/* ========= 4. 重roll 按钮垂直放在 AI 头像正下方 ========= */
-.message-wrapper.ai {
-    position: relative;       /* 为按钮定位准备 */
-}
-
-.reroll-btn {
-    position: absolute;
-    left: 7px;
-    top: 46px;
-    font-size: 0.75rem;
-    padding: 3px 3px;
-    background: rgba(0, 0, 0, 0.06);
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 30px;
-    cursor: pointer;
-    opacity: 0.75;
-    transition: all 0.2s;
-    z-index: 10;
-}
-
-.reroll-btn:hover {
-    opacity: 1;
-    background: rgba(0,0,0,0.14);
-}
-
-/* ========= 5. 加载动画也对齐到头像下方 ========= */
-#loading-indicator {
-    align-self: flex-start;
-    margin-left: 50px;        /* 40px头像 + 10px gap */
-    padding: 4px 0;
-}
-
 /* --- 新增：消息气泡入场动画 --- */
 
 /* 
@@ -335,9 +312,9 @@ html, body {
     flex-shrink: 0;              /* 顶栏不被压缩 */
     /* 你原来的毛玻璃样式全部保留，超级好看 */
     padding: 12px 20px;
-    border-bottom: 1px solid rgba(220,220,220,0.4);
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(10px) saturate(180%);
+    border-bottom: 1px solid rgba(220,220,220,0.9);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(10px) saturate(180%);
     border-radius: 0;
 }
@@ -355,9 +332,9 @@ html, body {
     flex-shrink: 0;              /* 输入框永远贴底 */
     /* 你原来的毛玻璃样式也保留 */
     padding: 10px 16px;
-    border-top: 1px solid rgba(220,220,220,0.4);
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(10px) saturate(180%);
+    border-top: 1px solid rgba(220,220,220,0.9);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(10px) saturate(180%);
     border-radius: 0;
 }

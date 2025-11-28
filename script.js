@@ -1,5 +1,5 @@
 // --- 配置区 ---
-const API_KEY = 'sk-pbztoqcgeotexcbjzgduqxixqqufankpnvujkyudpbqxsntv';
+const API_KEY = 'sk-zjrwnikmirbgzteakyyrqtlwmkglwpapqcgpmgjbyupxhwzd';
 const API_URL = 'https://api.siliconflow.cn/v1/chat/completions';
 // const MODEL = "deepseek-ai/DeepSeek-V3.2-Exp";  // 可改成 Qwen2.5 等
 const MODEL = "zai-org/GLM-4.6";  // 可改成 Qwen2.5 等
@@ -109,18 +109,7 @@ async function addAiWaterfallMessage(fullText) {
         const text = paragraphs[i].split('\n').map(l => l.trim()).filter(Boolean).join('\n');
         const msgWrapper = createSingleMessageWrapper(text, 'ai');
 
-        // 只有最后一段加重roll按钮
-        if (i === paragraphs.length - 1) {
-            const btn = document.createElement('button');
-            btn.className = 'reroll-btn';
-            btn.textContent = '✨';
-            btn.onclick = (e) => {
-                e.stopPropagation();
-                handleSendTask(true);  // 重roll也走发送逻辑
-            };
-            msgWrapper.querySelector('.message-content').appendChild(btn);
-        }
-
+        // 已经没有 reroll 按钮了！干净！
         chatMessages.appendChild(msgWrapper);
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
@@ -208,6 +197,7 @@ async function handleSendTask(isReroll = false) {
         sendButton.disabled = false;
         taskInput.disabled = false;
         taskInput.focus();
+        updateRerollButtonState();
         console.log('%c✅ 本轮结束，输入框已释放～', 'color: #a6e3a1;');
     }
 }
@@ -231,6 +221,18 @@ taskInput.addEventListener('keydown', e => {
     }
 });
 clearButton.addEventListener('click', clearChatHistory);
+
+// ====== 新增：底部固定重roll按钮（左边那个✨）======
+document.getElementById('reroll-footer-btn').addEventListener('click', () => {
+    // 如果根本没聊天记录，就不让点
+    if (messageHistory.length <= 1 || !messageHistory.some(m => m.role === 'assistant')) {
+        console.log('%c还没聊天呢，姐姐别乱戳我呀～', 'color: #cba6f7;');
+        return;
+    }
+    
+    console.log('%c✨ 姐姐戳了底部小星星！小真蛸立刻重roll！', 'color: #cba6f7; font-weight: bold;');
+    handleSendTask(true);  // 复用你原来超级完善的重roll逻辑
+});
 
 // ============= 加载历史 =============
 window.addEventListener('load', () => {
@@ -257,3 +259,23 @@ function saveHistory() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
     console.log('%c聊天记录已保存到 localStorage', 'color: #a6e3a1;');
 }
+
+// ============= 重roll =============
+// ====== 额外优化：没聊天记录时禁用底部重roll按钮 ======
+function updateRerollButtonState() {
+    const hasHistory = messageHistory.some(m => m.role === 'assistant');
+    const btn = document.getElementById('reroll-footer-btn');
+    btn.disabled = !hasHistory;
+    btn.style.opacity = hasHistory ? '1' : '0.4';
+    btn.style.cursor = hasHistory ? 'pointer' : 'not-allowed';
+}
+
+// 页面加载时执行一次
+window.addEventListener('load', () => {
+    // 你原来的 load 代码……
+    updateRerollButtonState();
+});
+
+
+
+
