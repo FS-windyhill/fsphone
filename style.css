@@ -2,8 +2,10 @@
     --primary-color: #f16c6c;
     --background-color: #ffffff;
     --text-color: #333;
-    --message-bg-user: #ffffffc8;
+    --message-bg-user: #d1ffbed8;
     --message-bg-ai: #ffffffc8;
+    --message-border-user: #96b37c;
+    --message-border-ai: #e8e8e8;    
     --border-radius: 15px;
     --box-shadow: 0 3px 3px rgba(0,0,0,0.08);
 }
@@ -53,30 +55,43 @@ body {
 
 /* 2. 全新设计的“清空”按钮样式 */
 #clear-button {
+    /* --- 定位保持不变 --- */
     position: absolute;
     top: 50%;
-    right: 16px;                 /* 手机上稍微往左一点，别贴边 */
+    right: 16px;
     transform: translateY(-50%);
     
-    /* 强制宽高相等 + 不被压缩 */
-    width: 25px !important;     /* 手机上可以稍微大一点，手感更好 */
+    /* --- 1. 核心修复：强制盒子模型 --- */
+    box-sizing: border-box; 
+    
+    /* --- 2. 尺寸设定 --- */
+    /* 建议稍微给大丢丢到 26px 或 28px，手指更好点，这里保持你想要的 25px */
+    width: 25px !important;
     height: 25px !important;
-    min-width: 25px;             /* 防止被flex压缩 */
+    min-width: 25px;
     min-height: 25px;
-    aspect-ratio: 1 / 1;
     border-radius: 50%;
     
+    /* --- 3. 完美的 Flex 居中 (关键！) --- */
     display: flex;
     justify-content: center;
     align-items: center;
-
-    font-size: 25px;        /* 比之前再大一点点，最舒服的大小 */
-    color: #818181;            /* 深灰色，比黑色柔和 */
-    padding-top: 5px;
-    font-weight: 200;
+    padding: 0;       /* 重点：一定要把 padding 归零！ */
     
+    /* --- 4. 字体微调 --- */
+    font-size: 16px;  /* 字体必须比盒子小，icon 才会居中且不拥挤 */
+    line-height: 1;   /* 消除文字默认行高，防止垂直偏移 */
+    font-weight: 300; /*稍微细一点点更像现代App */
+    color: #818181;
+    
+    /* --- 外观样式 --- */
     border: 1.5px solid #717171ad;
     background: rgba(236, 236, 236, 0.873);
+    
+    /* --- 5. iOS 专用修复 (防止苹果手机加默认按钮样式) --- */
+    -webkit-appearance: none;
+    appearance: none;
+    outline: none;
 }
 
 
@@ -105,14 +120,12 @@ body {
     background-color: var(--message-bg-user);
     color: var(--text-color);
     align-self: flex-end;
-    border: 1px solid #e0e0e0;
 }
 
 .message.ai {
     background-color: var(--message-bg-ai);
     color: var(--text-color);
     align-self: flex-start;
-    border: 1px solid #e0e0e0;
 }
 
 .app-footer {
@@ -129,7 +142,7 @@ body {
     border: 1px solid #ccc;
     border-radius: 8px;
     font-size: 1em;
-    background: rgba(255, 255, 255, 0.68) !important;   /* 重点！ */
+    background: rgba(255, 255, 255, 0.6) !important;   /* 重点！ */
 }
 
 #task-input:focus {
@@ -215,13 +228,13 @@ body {
 
 .message-wrapper.user .message-bubble {
     background: var(--message-bg-user);
-    border: 1.3px solid #e8e8e800;
+    border: 1.3px solid var(--message-border-user);
     border-top-right-radius: 3px;
 }
 
 .message-wrapper.ai .message-bubble {
     background: var(--message-bg-ai);
-    border: 1.3px solid #e8e8e8;
+    border: 1.3px solid var(--message-border-ai);
     border-top-left-radius: 3px;
 }
 
@@ -324,8 +337,8 @@ html, body {
     padding: 12px 20px;
     border-bottom: 1px solid rgba(220,220,220,0.4);
     background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
     border-radius: 0;
 }
 
@@ -344,8 +357,8 @@ html, body {
     padding: 10px 16px;
     border-top: 1px solid rgba(220,220,220,0.4);
     background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(28px) saturate(180%);
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
     border-radius: 0;
 }
 
