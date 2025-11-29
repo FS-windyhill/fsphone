@@ -757,8 +757,17 @@ window.exportData = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `TeleWindy-Backup-${new Date().toISOString().slice(0,10)}.json`;
+
+    // —— 这里是改好的时间戳 ——
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const timestamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_` +
+                      `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+    a.download = `TeleWindy-Backup-${timestamp}.json`;
+    // ————————————————
+
     a.click();
+    URL.revokeObjectURL(url); // 顺手清理一下内存
 };
 
 window.importData = (input) => {
