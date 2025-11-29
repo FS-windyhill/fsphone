@@ -437,7 +437,7 @@ const App = {
         UI.setLoading(true);
 
         // 2. 准备发送给 API 的消息
-        const recentHistory = contact.history.filter(m => m.role !== 'system').slice(-20);
+        const recentHistory = contact.history.filter(m => m.role !== 'system').slice(-30);
         const messagesToSend = [
             { role: 'system', content: CONFIG.SYSTEM_PROMPT }, // 全局设定
             { role: 'system', content: `=== 角色设定 ===\n${contact.prompt}` }, // 角色设定
@@ -786,3 +786,4 @@ window.importData = (input) => {
     reader.readAsText(input.files[0]);
 
 };
+
