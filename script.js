@@ -38,6 +38,7 @@ const CONFIG = {
 人类说话是不会带括号和动作描写的。所以你应该的输出应该贴合人类的说话方式，直接输出说话的内容。
 你想说啥就说啥，不必拘束。
 每次输出3~9句话左右，每两句话中间空一行。
+系统会在上下文里加入一个这样格式的时间戳：[Nov.29 15:19]，供你感知现实世界。输出时，你禁止输出这个时间戳。后台系统会自动添加。
     `
 };
 
@@ -292,15 +293,21 @@ const UI = {
         contact.history.forEach(msg => {
             if (msg.role === 'system') return;
             const sender = msg.role === 'assistant' ? 'ai' : 'user';
+
+            // ★★★★★ 只取 content，绝不显示 timestamp！★★★★★
+            const cleanText = typeof msg === 'string' 
+                ? msg                                 // 老数据兼容（字符串）
+                : msg.content || '';                  // 新数据取 content
             
             // 分段渲染逻辑
             const paragraphs = msg.content.split(/\n\s*\n/).filter(p => p.trim());
             if (paragraphs.length > 0) {
-                paragraphs.forEach(p => this.appendMessageBubble(p, sender, contact.avatar));
-            } else {
-                this.appendMessageBubble(msg.content, sender, contact.avatar);
+                paragraphs.forEach(p => this.appendMessageBubble(p.trim(), sender, contact.avatar));
+            } else if (cleanText.trim()) {
+                this.appendMessageBubble(cleanText.trim(), sender, contact.avatar);
             }
         });
+
         this.scrollToBottom();
         this.updateRerollState(contact);
     },
@@ -399,6 +406,7 @@ const App = {
         }
 
         let userText = UI.els.input.value.trim();
+        const timestamp = formatTimestamp();   // ← 新增：生成当前时间戳
 
         // 1. 处理消息历史
         const sysMsg = { role: 'system', content: contact.prompt };
@@ -427,8 +435,15 @@ const App = {
         } else {
             // 正常发送
             if (!userText) return;
-            UI.appendMessageBubble(userText, 'user');
-            contact.history.push({ role: 'user', content: userText });
+            // ★★★★★ 关键修改：用户消息带上时间戳 ★★★★★
+            const taggedUserText = `[${timestamp}] ${userText}`;
+            UI.appendMessageBubble(userText, 'user');                 // 界面上仍然显示纯文字（更清爽）
+            // ★★★★★ 关键：存成对象，content 保持纯净 ★★★★★
+            contact.history.push({ 
+                role: 'user', 
+                content: userText,           // 纯文字，界面用这个
+                timestamp: timestamp         // 时间戳单独存
+            });
             UI.els.input.value = '';
             UI.els.input.blur();
         }        
@@ -437,7 +452,24 @@ const App = {
         UI.setLoading(true);
 
         // 2. 准备发送给 API 的消息
-        const recentHistory = contact.history.filter(m => m.role !== 'system').slice(-30);
+        const recentHistory = contact.history
+            .filter(m => m.role !== 'system')
+            .slice(-30)
+            .map(msg => {
+                if (msg.role === 'system') return msg;
+
+                // 老数据兼容（以前是字符串）
+                if (typeof msg === 'string') {
+                    return { role: msg.role || 'user', content: msg };
+                }
+
+                // 新数据：有 timestamp 的
+                const timestamp = msg.timestamp || formatTimestamp(); // 没时间就用当前时间
+                const contentWithTime = `[${timestamp}] ${msg.content}`;
+
+                return { role: msg.role, content: contentWithTime };
+            });
+        
         const messagesToSend = [
             { role: 'system', content: CONFIG.SYSTEM_PROMPT }, // 全局设定
             { role: 'system', content: `=== 角色设定 ===\n${contact.prompt}` }, // 角色设定
@@ -447,11 +479,18 @@ const App = {
         try {
             const aiText = await API.chat(messagesToSend, STATE.settings);
             
-            contact.history.push({ role: 'assistant', content: aiText });
+            const aiTimestamp = formatTimestamp();
+            const taggedAiText = `[${aiTimestamp}] ${aiText}`;
+
+            contact.history.push({ 
+                role: 'assistant', 
+                content: aiText,             // 纯文字
+                timestamp: aiTimestamp       // 时间戳单独存
+            });
             Storage.saveContacts();
             
             UI.setLoading(false);
-            await UI.playWaterfall(aiText, contact.avatar);
+            await UI.playWaterfall(aiText, contact.avatar); // 播放时去掉时间戳，界面更干净
 
         } catch (error) {
             console.error(error);
@@ -786,6 +825,24 @@ window.importData = (input) => {
     reader.readAsText(input.files[0]);
 
 };
+
+
+// =========================================
+// 新增各种小工具
+// =========================================
+
+// 时间感知
+function formatTimestamp() {
+    const now = new Date();
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[now.getMonth()];
+    const day = now.getDate();
+    const hour = now.getHours().toString().padStart(2, '0');
+    const minute = now.getMinutes().toString().padStart(2, '0');
+    return `${month}.${day} ${hour}:${minute}`;
+}
+// 示例输出：Nov.29 15:09
 
 
 
