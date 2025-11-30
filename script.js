@@ -879,9 +879,10 @@ function formatTimestamp() {
     const day = now.getDate();
     const hour = now.getHours().toString().padStart(2, '0');
     const minute = now.getMinutes().toString().padStart(2, '0');
-    return `当前时间（系统自动添加）：${month}.${day} ${hour}:${minute}`;
+    return `${month}.${day} ${hour}:${minute}`;
 }
 // 示例输出：Nov.29 15:09
+
 
 
 
