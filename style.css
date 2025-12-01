@@ -4,7 +4,7 @@
     --text-color: #333;
     --message-bg-user: #d1ffbed8;
     --message-bg-ai: #ffffffd0;
-    --message-border-user: #bad1a6;
+    --message-border-user: #b3c5a3;
     --message-border-ai: #e8e8e8;    
     --border-radius: 15px;
     --box-shadow: 0 3px 3px rgba(0,0,0,0.08);
@@ -23,21 +23,24 @@ body {
     display: flex;
     flex-direction: column;
     background: url('wallpaper.jpg') center/cover no-repeat fixed;
+    /* 如果没有wallpaper.jpg，用这个备用色，防止一片白 */
+    background-color: #f2f2f2; 
 }
-
 
 
 /* --- Header 最终布局样式 --- */
 
 /* 1. 修改 Header 容器，让它成为按钮定位的“锚点” */
 .app-header {
-    position: relative; /* 关键！为内部的绝对定位元素提供参考系 */
-    padding: 12px 24px; /* 上下 padding 可以稍微给多一点，更好看 */
-    border-bottom: 1px solid #e0e0e0;
+    position: relative;
+    padding: 12px 24px;
+    border-bottom: 1px solid rgba(220,220,220,0.9);
     text-align: center;
     flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
 }
-
 
 /* 这两部分的样式保持不变，确保文字垂直居中 */
 .app-header h1 {
@@ -86,11 +89,16 @@ body {
 }
 
 .app-footer {
+    flex-shrink: 0;   /* 输入框永远贴底 */
+    /* 你原来的毛玻璃样式也保留 */
     padding: 8px 16px;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid rgba(220,220,220,0.9);
     display: flex;
     gap: 9px;
-    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    border-radius: 0;
 }
 
 #task-input {
@@ -163,6 +171,8 @@ body {
     max-width: 93%;
     opacity: 0;
     animation: slideInUp 0.35s ease-out 0.05s forwards;
+    /* 新增：让内部可以用 position 定位时间戳 */
+    position: relative;
 }
 
 .message-wrapper.user {
@@ -172,6 +182,14 @@ body {
 
 .message-wrapper.ai {
     align-self: flex-start;   /* 整体左对齐 */
+}
+
+/* 2. 把原来的 .message-content 改成 flex column（本来就该这样） */
+.message-content {
+    flex: 1;                     /* 占满剩余空间 */
+    display: flex;
+    flex-direction: column;      /* 关键！让气泡和时间戳垂直排列 */
+    justify-content: flex-end;   /* 时间戳往下沉 */
 }
 
 
@@ -274,21 +292,11 @@ body {
     flex: 1;                     /* 中间聊天区域吃掉所有剩余空间 */
     overflow-y: auto;            /* 只有这里能滚动 */
     min-height: 0;               /* 同样关键！ */
-    padding: 10px;
+    padding:15px 5px;
     display: flex;
     flex-direction: column;
 }
 
-.app-footer {
-    flex-shrink: 0;              /* 输入框永远贴底 */
-    /* 你原来的毛玻璃样式也保留 */
-    padding: 10px 16px;
-    border-top: 1px solid rgba(220,220,220,0.9);
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
-    border-radius: 0;
-}
 
 /* 正在输入 */
 #typing-status {
@@ -314,67 +322,9 @@ body {
 }
 
 
-/* 好友列表 */
+/* 重复的 */
 
-:root {
-    --primary-color: #f16c6c;
-    --background-color: #ffffff;
-    --text-color: #333;
-    --message-bg-user: #d1ffbed8;
-    --message-bg-ai: #ffffffd0;
-    --message-border-user: #96b37c;
-    --message-border-ai: #e8e8e8;    
-    --border-radius: 15px;
-    --box-shadow: 0 3px 3px rgba(0,0,0,0.08);
-}
 
-body {
-    display: flex;
-    flex-direction: column;
-    background: url('wallpaper.jpg') center/cover no-repeat fixed;
-    /* 如果没有wallpaper.jpg，用这个备用色，防止一片白 */
-    background-color: #f2f2f2; 
-}
-
-.app-header {
-    position: relative;
-    padding: 12px 24px;
-    border-bottom: 1px solid rgba(220,220,220,0.9);
-    text-align: center;
-    flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
-}
-
-.app-header h1 {
-    margin: 0;
-    font-size: 1.2em;
-    color: var(--primary-color);
-}
-
-.app-header p {
-    margin: 2px 0 0;
-    font-size: 0.8em;
-    color: #666;
-}
-
-#chat-messages {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.app-footer {
-    padding: 8px 16px;
-    border-top: 1px solid rgba(220,220,220,0.9);
-    display: flex;
-    gap: 9px;
-    flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
-}
 
 #task-input {
     flex-grow: 1;
@@ -572,7 +522,7 @@ body {
 #contact-list-wrapper {
     width: 90vw;
     max-width: 520px;          /* 手机/平板不会太宽 */
-    height: 90vh;
+    height: 85vh;
     max-height: 820px;
     margin: auto;              /* 上下左右自动居中 */
     background: rgba(255, 255, 255, 0.72);     /* 亮色壁纸推荐 0.72 */
@@ -1077,17 +1027,13 @@ body {
 /* --- 时间戳样式 (重点) --- */
 .msg-time {
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.9); /* 亮白色文字 */
-    margin: 0 3px; /* 距离气泡的间距 */
-    
-    /* 核心：发光效果，防止背景太乱看不清 */
-    text-shadow: 
-        0 0 2px rgba(0,0,0,0.8),  /* 第一层黑阴影 */
-        0 0 4px rgba(0,0,0,0.5);  /* 第二层晕染 */
-    
-    white-space: nowrap; /* 防止时间换行 */
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 0 2px rgba(0,0,0,0.8), 0 0 4px rgba(0,0,0,0.5);
+    white-space: nowrap;
     opacity: 0.8;
-    align-items: flex-end;
+    /* 新增：让时间戳紧贴气泡右下角 */
+    align-self: flex-end;        /* 靠右对齐 */
+    margin: 1px 3px;           /* 可选：稍微往左缩一点，不贴边太死 */
 }
 
 

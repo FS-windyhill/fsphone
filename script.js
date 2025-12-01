@@ -154,15 +154,15 @@ const API = {
                 model: MODEL,
                 system: sysPrompts,
                 messages: [{ role: "user", content: lastUserMsg }],
-                max_tokens: 1024,
-                temperature: 0.8
+                max_tokens: 10000,
+                temperature: 1.2
             });
         } else if (provider === 'gemini') {
             fetchUrl = API_URL.endsWith(':generateContent') ? API_URL : `${API_URL}/${MODEL}:generateContent?key=${API_KEY}`;
             options.body = JSON.stringify({
                 contents: [{ role: 'user', parts: [{ text: lastUserMsg }] }],
                 system_instruction: { parts: [{ text: sysPrompts }] },
-                generationConfig: { temperature: 0.8, maxOutputTokens: 1024 }
+                generationConfig: { temperature: 1.2, maxOutputTokens: 10000 }
             });
         } else {
             // OpenAI Standard
@@ -170,8 +170,8 @@ const API = {
             options.body = JSON.stringify({
                 model: MODEL,
                 messages: messages,
-                temperature: 0.8,
-                max_tokens: 1024
+                temperature: 1.2,
+                max_tokens: 10000
             });
         }
 
@@ -322,64 +322,63 @@ const UI = {
     },
 
 
-    appendMessageBubble(text, sender, aiAvatarUrl, timestampRaw) {
-        // 1. 获取 HTML 中的模板
+    // ★★★ 重构核心：气泡渲染 ★★★
+    appendMessageBubble(text, sender, avatarUrl, timestampRaw) {
         const template = document.getElementById('msg-template');
-        // 2. 克隆一份模板内容 (true 表示深度克隆，包含子元素)
         const clone = template.content.cloneNode(true);
         
-        // 3. 获取克隆出来的各个节点
-        const wrapper = clone.querySelector('.message-wrapper');
-        const bubble = clone.querySelector('.message-bubble');
-        const timeSpan = clone.querySelector('.msg-time');
-        const avatarImg = clone.querySelector('.avatar-img');
-        const avatarText = clone.querySelector('.avatar-text');
+        // 1. 查找元素 (辅助函数减少代码量)
+        const find = (s) => clone.querySelector(s);
+        const wrapper = find('.message-wrapper');
+        const bubble = find('.message-bubble');
+        const timeEl = find('.msg-time');
+        const avatarImg = find('.avatar-img');
+        const avatarText = find('.avatar-text');
 
-        // 4. 设置类名 (ai 或 user) -> 这决定了 CSS 里的左右布局
-        wrapper.classList.add(sender);
-
-        // 5. 填充文本内容
+        // 2. 设置状态
+        wrapper.classList.add(sender); // add 'user' or 'ai'
         bubble.innerText = text;
 
-        // 6. 处理时间戳
+        // 3. 处理时间戳 (Telegram 风格： HH:MM)
         let timeStr = "";
-        if (timestampRaw && timestampRaw.includes(' ')) {
-            timeStr = timestampRaw.split(' ')[1]; 
+        if (timestampRaw) {
+            // 如果传入了 "Nov.29 15:09"，只取 "15:09"
+            const parts = timestampRaw.split(' ');
+            timeStr = parts.length > 1 ? parts[1] : timestampRaw;
         } else {
+            // 没传时间就取当前
             const n = new Date();
             timeStr = `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
         }
-        timeSpan.innerText = timeStr;
+        timeEl.innerText = timeStr;
 
-        // 7. 处理头像 (逻辑：如果是 URL 用 img，如果是 Emoji 用 div)
-        let currentAvatar = '';
-        if (sender === 'user') {
-            currentAvatar = STATE.settings.USER_AVATAR || 'char.jpg';
-        } else {
-            currentAvatar = aiAvatarUrl || '🤖';
-        }
-
-        // 判断是否为图片 URL (简单的判断：以 http 开头或 data:image 开头)
-        const isImage = currentAvatar.startsWith('http') || currentAvatar.startsWith('data:');
-
+        // 4. 处理头像 (显示图片还是 Emoji)
+        // 这里的逻辑：默认都 hidden，根据情况 remove('hidden')
+        // CSS 里需配合: .hidden { display: none !important; }
+        const isImage = avatarUrl && (avatarUrl.startsWith('http') || avatarUrl.startsWith('data:'));
+        
         if (isImage) {
-            avatarImg.src = currentAvatar;
-            // 如果加载失败，显示默认
-            avatarImg.onerror = () => { avatarImg.style.display='none'; avatarText.style.display='flex'; avatarText.innerText='?'; };
-            avatarText.style.display = 'none';
+            avatarImg.src = avatarUrl;
+            avatarImg.classList.remove('hidden');
+            avatarImg.onerror = () => { 
+                avatarImg.classList.add('hidden'); 
+                avatarText.innerText = '?'; 
+                avatarText.classList.remove('hidden'); 
+            };
         } else {
-            avatarImg.style.display = 'none';
-            avatarText.style.display = 'flex'; // Flex 用于居中 emoji
-            avatarText.innerText = currentAvatar;
+            avatarText.innerText = avatarUrl || '🤔';
+            avatarText.classList.remove('hidden');
         }
 
-        // 8. 将组装好的 DOM 插入页面
         this.els.chatMsgs.appendChild(clone);
         this.scrollToBottom();
     },
 
     scrollToBottom() {
-        this.els.chatMsgs.parentElement.scrollTop = this.els.chatMsgs.parentElement.scrollHeight;
+        // 使用 requestAnimationFrame 确保在 DOM 渲染完成后滚动
+        requestAnimationFrame(() => {
+            this.els.chatMsgs.parentElement.scrollTop = this.els.chatMsgs.parentElement.scrollHeight;
+        });
     },
 
     setLoading(isLoading) {
@@ -494,18 +493,26 @@ const App = {
             .filter(m => m.role !== 'system')
             .slice(-30)
             .map(msg => {
-                if (msg.role === 'system') return msg;
-
-                // 老数据兼容（以前是字符串）
-                if (typeof msg === 'string') {
-                    return { role: msg.role || 'user', content: msg };
+                // 兼容旧数据
+                let content = msg.content || msg;
+                
+                // ★★★ 核心修改在这里 ★★★
+                // 只有当角色是 'user' 时，才把时间戳拼进去
+                // 这样 AI 看到自己以前的回复里没有时间戳，它就不会模仿了
+                if (msg.role === 'user') {
+                    // 获取该消息的时间，如果没有存则用当前时间
+                    let time = msg.timestamp || formatTimestamp(); 
+                    return {
+                        role: 'user',
+                        content: `[${time}] ${content}` 
+                    };
+                } else {
+                    // 如果是 assistant (AI)，直接发送纯文本，不要带时间戳
+                    return {
+                        role: 'assistant',
+                        content: content 
+                    };
                 }
-
-                // 新数据：有 timestamp 的
-                const timestamp = msg.timestamp || formatTimestamp(); // 没时间就用当前时间
-                const contentWithTime = `[${timestamp}] ${msg.content}`;
-
-                return { role: msg.role, content: contentWithTime };
             });
         
         const messagesToSend = [
@@ -515,10 +522,14 @@ const App = {
         ];
 
         try {
-            const aiText = await API.chat(messagesToSend, STATE.settings);
+            let aiText = await API.chat(messagesToSend, STATE.settings);
+
+           // ★★★ 双保险：正则清洗 ★★★
+            // 如果 AI 还是不听话输出了 "[Dec.1 13:54] 晚安"，这就把它删掉
+            aiText = aiText.replace(/^\[.*?\]\s*/, '');
            
             const aiTimestamp = formatTimestamp();
-            const taggedAiText = `${aiText}`;
+            const taggedAiText = `[${timestamp}] ${aiText}`;
 
             contact.history.push({ 
                 role: 'assistant', 
