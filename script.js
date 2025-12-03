@@ -951,24 +951,38 @@ document.getElementById('gist-create-and-backup').addEventListener('click', asyn
             headers: {
                 Authorization: `token ${token}`,
                 'Content-Type': 'application/json',
-                'X-GitHub-Api-Version': '2022-11-28'  // 关键一行
+                'X-GitHub-Api-Version': '2022-11-28'
             },
             body: JSON.stringify(payload)
         });
 
-        // 只要状态码是 2xx 就算成功（即使后面被掐了）
-        if (res.status >= 200 && res.status < 300) {
-            let json = {};
-            try { json = await res.json(); } catch(e) {}
-            currentGistId = json.id || 'unknown';
-            localStorage.setItem('telewindy-gist-id', currentGistId);
-            showGistStatus(`备份成功！Gist 已创建${json.id ? '' : '（ID 被限流隐藏）'}`);
+        // 状态码 201 代表创建成功
+        if (res.ok) { // res.ok 包含 200-299
+            let json;
+            try {
+                // 尝试解析返回的数据获取 ID
+                json = await res.json();
+            } catch (e) {
+                // 如果这里报错，说明发生了 ERR_CONNECTION_RESET
+                throw new Error('Gist 已创建，但网络连接中断导致无法获取 ID。请去 GitHub 网页手动查看或重试。');
+            }
+
+            // === 关键修复：只有拿到真正的 ID 才保存 ===
+            if (json && json.id) {
+                currentGistId = json.id;
+                localStorage.setItem('telewindy-gist-id', currentGistId);
+                showGistStatus(`备份成功！Gist ID: ${json.id}`);
+            } else {
+                throw new Error('未获取到有效 ID，请检查网络');
+            }
         } else {
             const err = await res.json().catch(() => ({}));
             showGistStatus('创建失败：' + (err.message || res.status), true);
         }
     } catch (e) {
-        showGistStatus('网络错误（通常是限流）：' + e.message, true);
+        // 遇到网络错误，不保存任何 ID，让用户下次能重试
+        console.error(e);
+        showGistStatus('网络错误：' + e.message, true);
     }
 });
 
