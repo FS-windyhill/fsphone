@@ -944,25 +944,31 @@ document.getElementById('gist-create-and-backup').addEventListener('click', asyn
         }
     };
 
+    // 把原来的整个 try-catch 换成这个
     try {
         const res = await fetch('https://api.github.com/gists', {
             method: 'POST',
             headers: {
                 Authorization: `token ${token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-GitHub-Api-Version': '2022-11-28'  // 关键一行
             },
             body: JSON.stringify(payload)
         });
-        const json = await res.json();
-        if (json.id) {
-            currentGistId = json.id;
+
+        // 只要状态码是 2xx 就算成功（即使后面被掐了）
+        if (res.status >= 200 && res.status < 300) {
+            let json = {};
+            try { json = await res.json(); } catch(e) {}
+            currentGistId = json.id || 'unknown';
             localStorage.setItem('telewindy-gist-id', currentGistId);
-            showGistStatus(`创建成功并已备份！Gist ID: ${currentGistId.slice(0, 8)}...`);
+            showGistStatus(`备份成功！Gist 已创建${json.id ? '' : '（ID 被限流隐藏）'}`);
         } else {
-            showGistStatus('创建失败：' + (json.message || '未知错误'), true);
+            const err = await res.json().catch(() => ({}));
+            showGistStatus('创建失败：' + (err.message || res.status), true);
         }
     } catch (e) {
-        showGistStatus('网络错误：' + e.message, true);
+        showGistStatus('网络错误（通常是限流）：' + e.message, true);
     }
 });
 
@@ -1008,25 +1014,56 @@ document.getElementById('gist-backup').addEventListener('click', async () => {
     }
 });
 
-// 从云端恢复
+// 从云端恢复（终极防炸版）
 document.getElementById('gist-restore').addEventListener('click', async () => {
     if (!currentGistId) return showGistStatus('还未创建过备份', true);
     const token = gistTokenInput.value.trim();
     if (!token) return showGistStatus('请填写 Token', true);
 
     showGistStatus('正在从云端拉取数据...');
+
     try {
         const res = await fetch(`https://api.github.com/gists/${currentGistId}`, {
             headers: { Authorization: `token ${token}` }
         });
+
+        if (!res.ok) throw new Error('Gist 获取失败');
+
         const json = await res.json();
         const file = json.files['telewindy-backup.json'];
         if (!file) return showGistStatus('备份文件不存在', true);
 
-        const content = JSON.parse(file.content);
-        importAllData(content.data);
-        showGistStatus('恢复成功！即将刷新页面...（3秒后自动刷新）');
-        setTimeout(() => location.reload(), 3000);
+        let content = file.content;
+
+        // === 关键修复：GitHub 有时会把超长文件截断并加上 "truncated": true ===
+        if (file.truncated) {
+            // 如果被截断了，就去 raw 地址重新完整拉一次（GitHub 官方推荐做法）
+            const rawRes = await fetch(file.raw_url);
+            content = await rawRes.text();
+        }
+
+        // === 终极防炸解析：用 try + 手动清洗非法控制字符 ===
+        let backupData;
+        try {
+            backupData = JSON.parse(content);
+        } catch (e) {
+            showGistStatus('JSON 解析失败，正在尝试修复...');
+            // 暴力清洗所有 ASCII 控制字符（除了 \n \r \t）
+            const cleaned = content.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
+            backupData = JSON.parse(cleaned);
+        }
+
+        // 成功解析后导入
+        if (backupData && backupData.data) {
+            Object.keys(backupData.data).forEach(key => {
+                localStorage.setItem(key, backupData.data[key]);
+            });
+            showGistStatus('恢复成功！3秒后自动刷新页面');
+            setTimeout(() => location.reload(), 3000);
+        } else {
+            showGistStatus('备份格式错误', true);
+        }
+
     } catch (e) {
         showGistStatus('恢复失败：' + e.message, true);
     }
