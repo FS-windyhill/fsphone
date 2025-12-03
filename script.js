@@ -997,17 +997,26 @@ document.getElementById('gist-backup').addEventListener('click', async () => {
     try {
         const res = await fetch(`https://api.github.com/gists/${currentGistId}`, {
             method: 'PATCH',
-            headers: {
+            headers: {  
                 Authorization: `token ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(payload)
         });
+
         if (res.ok) {
             showGistStatus('备份更新成功！' + new Date().toLocaleTimeString());
         } else {
-            const err = await res.json();
-            showGistStatus('备份失败：' + (err.message || res.status), true);
+            // ============ 修改开始 ============
+            if (res.status === 404) {
+                localStorage.removeItem('telewindy-gist-id'); // 清除无效 ID
+                currentGistId = null; // 重置变量
+                showGistStatus('原备份 ID 失效（已自动清除），请重新点击「创建并备份」', true);
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showGistStatus('备份失败：' + (err.message || res.status), true);
+            }
+            // ============ 修改结束 ============
         }
     } catch (e) {
         showGistStatus('网络错误：' + e.message, true);
@@ -1027,7 +1036,16 @@ document.getElementById('gist-restore').addEventListener('click', async () => {
             headers: { Authorization: `token ${token}` }
         });
 
-        if (!res.ok) throw new Error('Gist 获取失败');
+        // ============ 修改开始 ============
+        if (!res.ok) {
+            if (res.status === 404) {
+                localStorage.removeItem('telewindy-gist-id');
+                currentGistId = null;
+                throw new Error('找不到该备份（ID失效），已重置状态，请重新创建。');
+            }
+            throw new Error(`Gist 获取失败 (${res.status})`);
+        }
+        // ============ 修改结束 ============
 
         const json = await res.json();
         const file = json.files['telewindy-backup.json'];
