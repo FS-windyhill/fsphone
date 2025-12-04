@@ -245,13 +245,17 @@
                     </small>
                 </div>
 
+                <!-- Gist ID 输入/显示框 (新增) -->
+                <input type="text" id="gist-id-input" placeholder="Gist ID (通常在恢复时手动填写)">
+                <button id="gist-find">查找Gist ID</button>
+
                 <!-- 三个按钮 -->
                 <div class="gist-buttons">
                     <button type="button" id="gist-create-and-backup" class="gist-btn primary">
                         创建并备份
                     </button>
                     <button type="button" id="gist-backup" class="gist-btn">
-                        仅备份（更新）
+                        更新云端备份
                     </button>
                     <button type="button" id="gist-restore" class="gist-btn">
                         从云端恢复

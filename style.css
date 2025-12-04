@@ -1047,12 +1047,38 @@ body {
     color: #666;
 }
 
+/* Gist ID */
+input#gist-id-input {
+    width: 50%;
+    padding: 11px 14px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #f9f9f9;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: all 0.2s ease;
+}
+
+button#gist-find{
+    background: var(--btn-color);
+    margin-left: 7px;
+    border: 0.7px solid var(--btn-border-color);
+    color: var(--primary-color);
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 0.7px solid var(--btn-border-color);
+}
+
 /* 按钮区域 */
 .gist-buttons {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
-    margin-top: 8px;
+    margin-top: 15px;
 }
 
 .gist-btn {
