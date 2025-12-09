@@ -606,13 +606,13 @@ const App = {
         // === 1. 初始化输入框样式 ===
         UI.els.input.style.overflowY = 'hidden'; 
         UI.els.input.style.resize = 'none';      
-        UI.els.input.style.height = '36px';      
+        UI.els.input.style.height = '38px';      
 
         // === 2. 监听输入，实现自动增高 ===
         UI.els.input.addEventListener('input', function() {
             this.style.height = 'auto'; 
             this.style.height = (this.scrollHeight) + 'px';
-            if (this.value === '') this.style.height = '36px';
+            if (this.value === '') this.style.height = '38px';
         });
 
         // === 3. 聊天发送逻辑 ===
