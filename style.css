@@ -38,7 +38,7 @@ body {
 .app-header {
     position: relative;
     padding: 12px 24px;
-    border-bottom: 1px solid rgba(220,220,220,0.9);
+    border-bottom: 1px solid rgba(70,70,70,0.9);
     text-align: center;
     flex-shrink: 0;
     background: rgba(0, 0, 0, 0.8);
@@ -109,7 +109,7 @@ body {
     flex-grow: 1;
     /* 调整内边距，使其文字垂直居中看起来像 input */
     padding: 6px 16px; 
-    border: 1px solid rgba(50,50,50,0.9);
+    border: 1px solid rgba(150,150,150,0.9);
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.6) !important;
 
@@ -134,13 +134,13 @@ body {
 
 #task-input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: #ffffff;
     background: rgba(50, 50, 50, 0.88) !important;
 }
 
 #send-button {
     padding: 5px 12px;
-    border:1px solid rgba(230, 230, 230, 0.8);
+    border:1px solid rgba(230, 230, 230, 0.5);
     background: rgba(50, 50, 50, 0.2);
     color: rgb(230, 230, 230);
     border-radius: 8px;
@@ -151,7 +151,7 @@ body {
 
 #reroll-footer-btn {
     padding: 5px 12px;
-    border:1px solid rgba(230, 230, 230, 0.8);
+    border:1px solid rgba(230, 230, 230, 0.5);
     cursor: pointer;
     border-radius: 8px;
     font-size: 1em;
@@ -1130,6 +1130,7 @@ button#gist-find{
 /* 成功/错误状态（可选，你 JS 里可以加 class） */
 .gist-status.success { color: #28a745; }
 .gist-status.error   { color: #dc3545; }
+
 
 
 
