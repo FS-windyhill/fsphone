@@ -140,9 +140,9 @@ body {
 
 #send-button {
     padding: 5px 12px;
-    border:1px solid rgba(127, 127, 127, 0.816);
-    background: rgba(251, 251, 251, 0.5);
-    color: rgb(131, 131, 131);
+    border:1px solid rgba(230, 230, 230, 0.8);
+    background: rgba(50, 50, 50, 0.2);
+    color: rgb(230, 230, 230);
     border-radius: 8px;
     font-size: 1em;
     cursor: pointer;
@@ -151,14 +151,14 @@ body {
 
 #reroll-footer-btn {
     padding: 5px 12px;
-    border:1px solid rgba(127, 127, 127, 0.816);
+    border:1px solid rgba(230, 230, 230, 0.8);
     cursor: pointer;
     border-radius: 8px;
     font-size: 1em;
     flex-shrink: 0;
     transition: background-color 0.2s;
-    background: rgba(251, 251, 251, 0.5);
-    color: rgb(131, 131, 131);
+    background: rgba(50, 50, 50, 0.2);
+    color: rgb(230, 230, 230);
 }
 
 
@@ -1140,6 +1140,7 @@ button#gist-find{
 /* 成功/错误状态（可选，你 JS 里可以加 class） */
 .gist-status.success { color: #28a745; }
 .gist-status.error   { color: #dc3545; }
+
 
 
 
