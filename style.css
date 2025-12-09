@@ -135,7 +135,7 @@ body {
 #task-input:focus {
     outline: none;
     border-color: var(--primary-color);
-    background: rgba(255, 255, 255, 0.88) !important;
+    background: rgba(50, 50, 50, 0.88) !important;
 }
 
 #send-button {
@@ -298,16 +298,6 @@ body {
 }
 
 /* ======== 3. 三个孩子的高度行为（原来就写对了，保留）======== */
-.app-header {
-    flex-shrink: 0;              /* 顶栏不被压缩 */
-    /* 你原来的毛玻璃样式全部保留，超级好看 */
-    padding: 12px 20px;
-    border-bottom: 1px solid rgba(220,220,220,0.9);
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
-    border-radius: 0;
-}
 
 #chat-window {
     flex: 1;                     /* 中间聊天区域吃掉所有剩余空间 */
@@ -323,7 +313,7 @@ body {
 #typing-status {
     margin: 4px 0 0;
     font-size: 0.8em;
-    color: #999;
+    color: rgba(255, 255, 255, 0.8);
     min-height: 1.2em;   /* 防止文字变了布局跳动 */
 }
 
@@ -1140,6 +1130,7 @@ button#gist-find{
 /* 成功/错误状态（可选，你 JS 里可以加 class） */
 .gist-status.success { color: #28a745; }
 .gist-status.error   { color: #dc3545; }
+
 
 
 
