@@ -11,7 +11,7 @@
     --primary-btn-color: rgba(241, 241, 255, 0.99);
     --primary-btn-text: rgb(116, 118, 255);
     --btn-color: #f5f5f5;
-    --btn-border-color: #c0c0c0;
+    --btn-border-color: #a9a9a9;
 }
 
 /* 你原来的 body 样式全部删掉或注释就行 */
@@ -78,18 +78,6 @@ body {
     max-width: 80%;
     line-height: 1.5;
     word-wrap: break-word;
-}
-
-.message.user {
-    background-color: var(--message-bg-user);
-    color: var(--text-color);
-    align-self: flex-end;
-}
-
-.message.ai {
-    background-color: var(--message-bg-ai);
-    color: var(--text-color);
-    align-self: flex-start;
 }
 
 .app-footer {
@@ -298,17 +286,6 @@ body {
 }
 
 /* ======== 3. 三个孩子的高度行为（原来就写对了，保留）======== */
-.app-header {
-    flex-shrink: 0;              /* 顶栏不被压缩 */
-    /* 你原来的毛玻璃样式全部保留，超级好看 */
-    padding: 12px 20px;
-    border-bottom: 1px solid rgba(220,220,220,0.9);
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
-    border-radius: 0;
-}
-
 #chat-window {
     flex: 1;                     /* 中间聊天区域吃掉所有剩余空间 */
     overflow-y: auto;            /* 只有这里能滚动 */
@@ -403,12 +380,6 @@ body {
     display: flex;
     align-items: center;
 }
-/* 因为你的header有padding-top(刘海屏)，所以上面的 top:50% 可能不准。
-   我们改为用 bottom定位，或者依赖 flex 布局。
-   为了不破坏你原本的布局，我们用绝对定位微调：
-*/
-.header-icon-btn.left { left: 10px; bottom: 0px; top: auto; transform: none; }
-.header-icon-btn.right { right: 10px; bottom: 5px; top: auto; transform: none; }
 
 /* 2. 全新设计的“清空”按钮样式 */
 .header-icon-btn.right {
@@ -678,7 +649,10 @@ body {
     background: #ff3a3a; color: #ffffff; border: 1px solid rgb(255, 0, 0);
     padding: 5px; border-radius: 8px; font-size: 13px; cursor: pointer; width: 100%;
 }
-.danger-btn.outline {background: #ffffff; color: #ff0b0b; border: 1px solid rgb(255, 0, 0); }
+.danger-btn.outline {
+    background: rgba(255, 80, 80, 0.1);
+    color: #d32f2f;
+    border: 1px solid rgba(255, 80, 80, 0.9);}
 
 /* ============= 新增样式：头像上传预览 ============= */
 .avatar-upload-group .avatar-preview-wrapper {
@@ -841,7 +815,6 @@ body {
     text-align: center;
     padding: 8px;
     border-radius: 14px;
-    background: rgba(0,0,0,0.05);
     max-width: 100%;    
 }
 
@@ -870,14 +843,6 @@ body {
 }
 
 /* ========== 设置中心标题美化 ========== */
-.settings-title {
-    margin: 5px 0 20px 0;
-    text-align: center;
-    font-size: 22px;
-    color: #333;
-    font-weight: 600;
-}
-
 .settings-section-title {
     margin: 28px 0 12px 0;
     font-size: 17px;
@@ -914,8 +879,48 @@ body {
 .setting-input:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(0,102,255,0.15);
+    box-shadow: 0 0 0 3px rgba(95, 95, 95, 0.15);
     background: white;
+}
+
+button#save-preset-btn.icon-btn{
+    flex: 1;
+    min-width: 120px;
+    padding: 11px 16px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #ffffff;
+    color: #333;
+    border: 0.7px solid var(--btn-border-color);
+    
+}
+
+button#del-preset-btn.icon-btn.danger{
+    flex: 1;
+    min-width: 120px;
+    padding: 11px 16px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: rgba(255, 80, 80, 0.1);
+    color: #d32f2f;
+    border: 1px solid rgba(255, 80, 80, 0.9);
+
+}
+
+.preset-btn-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 10px;   /* 上下多留点空间更好看 */
 }
 
 /* ========== 模型选择那一行 ========== */
@@ -1055,7 +1060,7 @@ body {
     outline: none;
     border-color: var(--primary-color);
     background: #fff;
-    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+    box-shadow: 0 0 0 3px rgba(112, 112, 112, 0.1);
 }
 
 .input-hint {
@@ -1143,3 +1148,998 @@ button#gist-find{
 
 
 
+/* ==================== 新版设置弹窗整体布局 ==================== */
+.settings-modal {
+    width: 94%;
+    max-width: 960px;           /* PC 上更宽敞 */
+    max-height: 92vh;
+    padding: 20px 16px 24px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.settings-title {
+    text-align: center;
+    font-size: 22px;
+    margin: 0 0 16px 0;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.settings-container {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.6);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+/* ==================== 左侧竖排目录（像书签一样）================= */
+.settings-sidebar {
+    width: 50px;                /* 手机上固定宽度 */
+    background: rgba(245,245,245,0.95);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    flex-shrink: 0;
+}
+
+.tab-item {
+    writing-mode: vertical-rl;      /* 关键：文字竖排 */
+    text-orientation: mixed;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    color: #666;
+    position: relative;
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+/* 选中状态：彩色便签效果 */
+.tab-item.active {
+    background: rgb(255, 255, 255);
+}
+
+/* 悬停也有一点反馈 */
+.tab-item:hover:not(.active) {
+    background: rgba(0,0,0,0.06);
+    color: #333;
+}
+
+.tab-text {
+    letter-spacing: 8px;           /* 竖排时字间距更好看 */
+    padding: 0 8px;
+}
+
+/* ==================== 右侧内容区 ==================== */
+.settings-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    background: rgba(255,255,255,0.8);
+}
+
+/* 每个 tab-pane 默认隐藏 */
+.tab-pane {
+    display: none;
+}
+.tab-pane.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 标题稍微调一下间距 */
+.settings-content .section-title {
+    margin: 12px 0 8px 0;
+    font-size: 18px;
+    color: #333;
+    font-weight: 600;
+    padding: 0px 0px 8px 0px;
+}
+
+/* ==================== 手机适配（屏幕小于 640px 时）=================== */
+@media (max-width: 640px) {
+    .settings-container {
+        flex-direction: column;        /* 手机上变成上下布局 */
+    }
+    .settings-sidebar {
+        width: 100%;
+        height: 45px;
+        padding: 0;
+        flex-direction: row;            /* 横向排列三个标签 */
+        border-right: none;
+    }
+    .tab-item {
+        writing-mode: horizontal-tb;    /* 手机恢复横排 */
+        height: auto;
+        width: 33.333%;
+        padding: 0;
+    }
+    .tab-text {
+        letter-spacing: normal;
+    }
+    .settings-content {
+        padding: 0px 18px 20px 18px;
+    }
+}
+
+
+/* ============= 世界书整体容器 ============= */
+/* ============= 世界书整体容器 ============= */
+/* ============= 世界书整体容器 ============= */
+
+
+
+/* ============= 世界书 (World Book) 专属样式 ============= */
+
+/* 布局容器 */
+.wi-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 15px;
+    padding: 5px; /* 给边缘一点呼吸空间 */
+    box-sizing: border-box;
+}
+
+/* 通用玻璃卡片风格 - 继承你的设计语言 */
+.glass-card {
+    background: rgba(255, 255, 255, 0.65); /* 比弹窗稍微透一点，因为在底层 */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+}
+
+/* 顶部工具栏 */
+.wi-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 10px 16px;
+}
+
+.wi-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wi-toolbar-group.main-select {
+    flex: 1;
+    min-width: 200px;
+}
+
+.wi-toolbar-group label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #444;
+    white-space: nowrap;
+}
+
+.wi-toolbar-divider.vertical {
+    width: 1px;
+    height: 24px;
+    background: rgba(0,0,0,0.1);
+    margin: 0 4px;
+}
+
+/* 主体分栏布局 */
+.wi-main-layout {
+    display: flex;
+    flex: 1;
+    gap: 15px;
+    overflow: hidden; /* 防止溢出 */
+}
+
+/* 左侧列表栏 */
+.wi-sidebar {
+    width: 220px; /*稍微加宽一点更美观*/
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+}
+
+.wi-sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.wi-list-scroll {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 4px; /* 给滚动条留位置 */
+}
+
+/* 列表里的每一项 (JS动态生成的div建议加个class，或者用通用选择器) */
+#wi-list-container > div {
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #333;
+    transition: all 0.2s;
+}
+
+#wi-list-container > div:hover {
+    background: rgba(230, 230, 230, 0.9);
+}
+
+#wi-list-container > div.active {
+    background: var(--primary-btn-color, #e0e0e0); /* 使用你的主色变量 */
+    color: var(--primary-btn-text);
+    font-weight: 600;
+    border-color: rgba(0,0,0,0.1);
+}
+
+/* 右侧编辑区 */
+.wi-editor {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+/* 编辑区内部的小板块 */
+.wi-section-card {
+    background: rgba(0, 0, 0, 0.01);
+    border: 1px solid var(--primary-btn-text);
+    border-radius: 12px;
+    padding: 12px 16px;
+}
+
+.wi-section-title {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #444;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sub-text {
+    font-size: 12px;
+    color: #888;
+    font-weight: normal;
+}
+
+.wi-edit-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.wi-edit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 复选框美化 */
+.wi-checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+    user-select: none;
+}
+.wi-checkbox-wrapper input {
+    width: 16px;
+    height: 16px;
+    accent-color: #666;
+    cursor: pointer;
+}
+
+/* 表单组 */
+.wi-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.wi-form-group.flex-grow {
+    flex: 1;
+}
+.wi-form-group label {
+    font-size: 13px;
+    color: #555;
+    font-weight: 500;
+    margin-left: 4px;
+}
+
+/* 输入控件 (继承你的 .setting-input 但做微调) */
+.wi-select {
+    width: 100%;
+    cursor: pointer;
+}
+.wi-textarea {
+    flex: 1;
+    min-height: 150px;
+    resize: none;
+    font-family: 'Consolas', 'Monaco', monospace; /* 代码字体 */
+    line-height: 1.5;
+    font-size: 13px;
+}
+
+/* 按钮样式体系 */
+.wi-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 1. 主要按钮 (类似你的上传按钮) */
+.wi-btn.primary {
+    background: var(--primary-btn-color);
+    color: var(--primary-btn-text);
+    border: 0.7px solid var(--primary-btn-text);
+}
+.wi-btn.primary:hover {
+    filter: brightness(1.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* 2. 次要按钮 (类似你的保存预设按钮) */
+.wi-btn.secondary {
+    background: var(--btn-color);
+    color: #333;
+    border: 0.7px solid var(--btn-border-color);
+}
+.wi-btn.secondary:hover {
+    background: #f7f7f7;
+    border-color: #999;
+}
+
+/* 3. 危险按钮 */
+.wi-btn.danger {
+    background: rgba(255, 80, 80, 0.1);
+    color: #d32f2f;
+    border: 1px solid rgba(255, 80, 80, 0.9);
+}
+
+
+/* 4. 纯图标/小按钮 */
+.wi-btn.icon-only {
+    padding: 2px 10px;
+    font-size: 18px;
+    line-height: 1;
+    background: rgba(0,0,0,0.05);
+    color: #555;
+}
+.wi-btn.icon-only:hover {
+    background: rgba(0,0,0,0.1);
+    color: #000;
+}
+
+/* 底部操作区 */
+.wi-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 5px;
+}
+
+.wi-btn.large {
+    padding: 10px 24px;
+    font-size: 14px;
+}
+
+/* 滚动条美化 (Webkit) */
+.wi-list-scroll::-webkit-scrollbar,
+.wi-editor::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+.wi-list-scroll::-webkit-scrollbar-thumb,
+.wi-editor::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.1);
+    border-radius: 3px;
+}
+.wi-list-scroll::-webkit-scrollbar-thumb:hover,
+.wi-editor::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.2);
+}
+
+/* ============= 修复溢出问题 (Fix Overflow) ============= */
+
+/* 1. 强制所有 WI 开头的元素使用这种计算方式：宽度包含了内边距 */
+[class^="wi-"], [id^="wi-"] {
+    box-sizing: border-box; 
+}
+
+/* 2. 针对 .glass-card 也要强制加上，确保万无一失 */
+.glass-card {
+    box-sizing: border-box;
+    max-width: 100%; /* 防止意外撑大 */
+}
+
+
+/* ============= 移动端适配 (Responsive Design) ============= */
+
+@media (max-width: 768px) {
+    
+    /* 1. 外层容器：减少边缘留白，利用每一寸屏幕 */
+    .wi-container {
+        padding: 4px;
+        gap: 8px;
+        height: auto; /* 取消固定高度，允许页面滚动 */
+        overflow-y: auto; /* 确保整体可滚动 */
+    }
+
+    /* 2. 顶部工具栏：从横排变竖排，按钮网格化 */
+    .wi-toolbar {
+        flex-direction: column;
+        align-items: stretch; /* 让子元素占满宽度 */
+        gap: 12px;
+        padding: 14px;
+    }
+
+    .wi-toolbar-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* 隐藏竖分割线，手机上不需要 */
+    .wi-toolbar-divider {
+        display: none;
+    }
+
+    /* 选择框组：上下排列 */
+    .wi-toolbar-group.main-select {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    
+    /* 书本操作按钮组：使用网格布局，一行三个，整齐漂亮 */
+    .wi-toolbar-group.actions,
+    .wi-toolbar-group.global-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr; /* 三等分 */
+        gap: 8px;
+    }
+    
+    /* 按钮样式微调：居中文字 */
+    .wi-toolbar button {
+        width: 100%;
+        justify-content: center;
+        padding: 8px 4px; /* 稍微减小内边距防止文字换行 */
+        font-size: 12px;
+    }
+
+    /* 3. 主布局：由左右变上下 */
+    .wi-main-layout {
+        flex-direction: column;
+        overflow: visible; /* 允许内容撑开高度 */
+    }
+
+    /* 4. 左侧列表：变成上方的一个短列表窗 */
+    .wi-sidebar {
+        width: 100%; /* 占满宽度 */
+        height: 220px; /* 固定高度，避免太长占满屏幕 */
+        flex: none; /* 禁止自动伸缩 */
+        border-right: none;
+        border-bottom: 1px solid rgba(255,255,255,0.3);
+    }
+
+    /* 列表项稍微加大，方便手指点击 */
+    #wi-list-container > div {
+        padding: 12px 14px;
+        font-size: 14px;
+    }
+
+    /* 5. 右侧编辑区：在下方铺开 */
+    .wi-editor {
+        width: 100%;
+        flex: none;
+        height: auto; /* 高度随内容自适应 */
+        min-height: 500px; /* 保证有足够编辑空间 */
+        padding: 16px;
+    }
+
+    /* 6. 输入框优化：防止iOS输入时自动放大 */
+    .setting-input, 
+    .wi-textarea,
+    input[type="text"] {
+        font-size: 16px !important; /* iOS小于16px会强制放大页面 */
+    }
+
+    /* 编辑区底部按钮：固定在底部或加大 */
+    .wi-form-actions {
+        display: grid;
+        grid-template-columns: 1fr 2fr; /* 删除键占1份，保存键占2份 */
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .wi-btn.large {
+        width: 100%;
+        padding: 12px 0;
+        font-size: 15px;
+    }
+
+    /* 宽度修正 */
+    .wi-sidebar, 
+    .wi-editor {
+        width: 100% !important; /* 强制占满父容器 */
+        max-width: 100vw;       /* 绝不超过屏幕宽度 */
+        margin-right: 0;
+        margin-left: 0;
+    }
+    
+    /* 修正容器的内边距计算 */
+    .wi-container {
+        width: 100%;
+        overflow-x: hidden; /* 彻底禁止横向滚动条 */
+    }
+}
+
+
+
+
+
+
+
+
+/* ============================================== */
+/* PART 3: 夜间模式 (Dark Mode) */
+/* ============================================== */
+
+/* 1. 变量重写：当 body 有 dark-mode 类时，覆盖原有变量 */
+body.dark-mode {
+    --primary-color: #505050;
+    --background-color: #2b2b2b; /* 增加一个深色底色，防止壁纸加载前刺眼 */
+    
+    /* 将你的 night- 变量映射回标准变量名，这样原来的气泡样式就能自动变色 */
+    --text-color: #ffffff; 
+    --message-bg-user: #d3ff9ed8;
+    --message-bg-ai: #3c3c3cd0;
+    --message-border-user: #88a65d;
+    --message-border-ai: #5b5b5b;
+    
+    --btn-color: #3a3a3a;          /* 按钮深色背景 */
+    --btn-border-color: #555555;   /* 按钮深色边框 */
+    
+    /* 修正字体颜色 */
+    color: #ffffff;
+}
+
+/* 2. 具体的样式覆盖 (Scoped Styles) */
+
+/* 设置弹窗在夜间模式下的背景色 */
+body.dark-mode .modal.glass-panel,
+body.dark-mode #contact-list-wrapper {
+    background: rgba(52, 52, 52, 0.85); /* 深灰色毛玻璃 */
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+body.dark-mode .settings-title,
+body.dark-mode .section-title, 
+body.dark-mode .settings-section-title,
+body.dark-mode h2,
+body.dark-mode h3 {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .api-label,
+body.dark-mode .input-label,
+body.dark-mode .input-group label {
+    color: #b0b0b0;
+}
+
+/* 输入框在夜间模式的通用样式 */
+body.dark-mode .setting-input,
+body.dark-mode #gist-id-input,
+body.dark-mode textarea {
+    background: #444;
+    border-color: #555;
+    color: #fff;
+}
+
+body.dark-mode .main-option {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ddd;
+}
+
+/* --- 你提供的特定组件样式重写 --- */
+
+/* Header */
+body.dark-mode .app-header {
+    background: rgba(57, 57, 57, 0.8);
+    border-bottom: 1px solid rgba(126, 126, 126, 0.7);
+}
+body.dark-mode .app-header h1 {
+    color: rgba(255, 255, 255, 0.9);
+}
+body.dark-mode .app-header p {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Footer */
+body.dark-mode .app-footer {
+    background: rgba(79, 79, 79, 0.8);
+    border-top: 1px solid rgba(126, 126, 126, 0.7);
+}
+
+/* 输入框区域 */
+body.dark-mode #task-input {
+    border: 1px solid #9d9d9dcc; /* 稍微加深一点 */
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.25) !important; /* 深色半透明背景 */
+}
+body.dark-mode #task-input:focus {
+    border: 2px solid #9d9d9d;
+    background: rgba(0, 0, 0, 0.25) !important;
+}
+body.dark-mode #task-input::placeholder {
+    color: #bdbdbd;
+}
+
+/* 按钮区域 */
+body.dark-mode #send-button,
+body.dark-mode #reroll-footer-btn {
+    border: 1px solid rgba(182, 182, 182, 0.3);
+    background: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* 顶部左右按钮 */
+body.dark-mode .header-icon-btn.right,
+body.dark-mode .header-icon-btn.left {
+    color: #dedede;
+    border: 1px solid #ffffff50;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* 通讯录列表 */
+body.dark-mode .contact-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+body.dark-mode .contact-item:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+body.dark-mode .contact-info h3 {
+    color: #ffffffd8;
+}
+body.dark-mode .contact-info p {
+    color: #cdcdcdc8;
+}
+
+/* ============================================== */
+/* PART 4: 夜间模式补全 (针对你刚提到的元素) */
+/* ============================================== */
+
+/* 1. 模型标签文字颜色变浅 */
+body.dark-mode .api-label2 {
+    color: #b0b0b0;
+}
+
+/* 2. GitHub Gist 卡片背景变深 */
+body.dark-mode .gist-sync-card {
+    background: rgba(255, 255, 255, 0.05); /* 极淡的透明白，显出高级灰 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none; /* 去掉阴影，扁平化 */
+}
+
+/* 3. 核心按钮 (Gist主按钮 & 获取模型按钮) 
+   夜间模式下改成半透明磨砂质感，文字变白 */
+body.dark-mode .gist-btn.primary,
+body.dark-mode #fetch-models-btn.fetch-models-btn {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: 2px solid var(--primary-btn-text) !important;
+}
+
+/* 鼠标悬停时稍微亮一点 */
+body.dark-mode .gist-btn.primary:hover,
+body.dark-mode #fetch-models-btn.fetch-models-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* 4. 弹窗里的普通输入框和文本域 (补全) */
+body.dark-mode .input-group input, 
+body.dark-mode .input-group textarea {
+    background: rgba(0, 0, 0, 0.25); /* 深色半透明底 */
+    border-color: #555;
+    color: #fff;
+}
+body.dark-mode .input-group input:focus, 
+body.dark-mode .input-group textarea:focus {
+    border-color: #888;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+
+/* ============================================== */
+/* PART 5: 气泡字体颜色独立设置 (重点！) */
+/* ============================================== */
+
+/* 用户气泡：夜间模式下，气泡是亮绿色的，所以文字要用深色 (#232323) */
+body.dark-mode .message-wrapper.user .message-bubble {
+    color: #232323; 
+    /* 如果气泡内有链接，也要强制变黑，防止看不清 */
+}
+body.dark-mode .message-wrapper.user .message-bubble a {
+    color: #0044cc; /* 链接用深蓝色，对比度更高 */
+}
+
+/* AI 气泡：夜间模式下，气泡是深灰色的，所以文字要用白色 */
+body.dark-mode .message-wrapper.ai .message-bubble {
+    color: #ffffff;
+}
+body.dark-mode .message-wrapper.ai .message-bubble a {
+    color: #8ab4f8; /* 链接用浅蓝色 */
+}
+
+/* 顺便修复一下 Markdown 代码块在夜间模式的背景 */
+body.dark-mode pre, 
+body.dark-mode code {
+    background: rgba(0, 0, 0, 0.3);
+    color: #e0e0e0;
+    border-radius: 4px;
+}
+
+
+/* ============================================== */
+/* PART 6: 查找按钮 (Gist Find) 夜间模式适配 */
+/* ============================================== */
+
+body.dark-mode button#gist-find {
+    /* 背景改为半透明白色，透出底下的深色，显得更有质感 */
+    background: rgba(255, 255, 255, 0.15); 
+    
+    /* 文字强制变白，确保清晰可见 */
+    color: #ffffff; 
+    
+    /* 边框稍微亮一点，增加轮廓感 */
+    border: 2px solid var(--primary-btn-text);
+}
+
+/* 鼠标悬停时的效果 */
+body.dark-mode button#gist-find:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+body.dark-mode .gist-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 11px 16px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s 
+ease;
+    background: var(--btn-color);
+    color: #ffffff;
+    border: 0.7px solid #a9a9a9
+}
+
+
+body.dark-mode button#main-cancel {
+    background: var(--btn-color);
+    color: #ffffff;
+}
+
+body.dark-mode button#main-confirm {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: 2px solid var(--primary-btn-text);
+}
+
+body.dark-mode button#modal-save {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: 2px solid var(--primary-btn-text);
+}
+
+body.dark-mode button.small-btn {
+    padding: 10px 62px;
+    font-size: 12px;
+    background: var(--btn-color);
+    color: #ffffff;
+    border: 0.7px solid #a9a9a9;
+    cursor: pointer;
+}
+
+body.dark-mode button#modal-cancel {
+    background: var(--btn-color);
+    color: #ffffff;
+}
+
+body.dark-mode .settings-content {
+    flex: 1;
+    overflow-y: auto;
+    background: rgba(50, 50, 50, 0.92);
+}
+
+body.dark-mode .settings-sidebar {
+    width: 50px;
+    background: rgba(31, 31, 31, 0.95);
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+    padding: 20px 0;
+    flex-shrink: 0;
+}
+
+body.dark-mode .tab-item.active {
+    background: #3b3b3b;
+    color: #fefefe;
+}
+
+/* 悬停也有一点反馈 */
+body.dark-mode .tab-item:hover:not(.active) {
+    background: rgba(0,0,0,0.06);
+    color: #fefefe;
+}
+
+
+body.dark-mode .wi-btn.secondary{
+    background: var(--btn-color);
+    color: #ffffff;
+    border: 0.7px solid #a9a9a9;
+}
+
+body.dark-mode .glass-card{
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+body.dark-mode .wi-toolbar-group label{
+    color: #ffffff;
+}
+
+body.dark-mode .wi-btn.icon-only{
+    padding: 2px 10px;
+    font-size: 18px;
+    line-height: 1;
+    background: rgba(0, 0, 0, 0.05);
+    color: #ffffff;
+}
+
+body.dark-mode .wi-sidebar-header{
+    color: #ffffff;
+}
+
+body.dark-mode .wi-section-title{
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+body.dark-mode .wi-checkbox-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #ffffff;
+    cursor: pointer;
+    user-select: none;
+}
+
+body.dark-mode .wi-form-group label {
+    font-size: 13px;
+    color: #ffffff;
+    font-weight: 500;
+    margin-left: 4px;
+}
+
+body.dark-mode .wi-btn.danger {
+    background: rgba(255, 33, 33, 0.5);
+    color: #ffcaca;
+    border: 1px solid rgba(255, 80, 80, 0.9);
+}
+
+body.dark-mode .wi-btn.primary {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: 2px solid var(--primary-btn-text) !important;
+}
+
+/* 删除按钮 */
+body.dark-mode .danger-btn {
+    background: #ff3a3a; color: #ffffff; border: 1px solid rgb(255, 0, 0);
+    padding: 5px; border-radius: 8px; font-size: 13px; cursor: pointer; width: 100%;
+}
+body.dark-mode .danger-btn.outline {
+    background: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    border: 1px solid rgba(255, 80, 80, 0.9);
+}
+
+
+/* ============================================== */
+/* PART 7: 夜间模式下的手机适配（< 640px）      */
+/* ============================================== */
+
+/* 手机端：顶部横向 Tab 样式覆盖 */
+@media (max-width: 640px) {
+    body.dark-mode .settings-container {
+        flex-direction: column;
+    }
+
+    body.dark-mode .settings-sidebar {
+        width: 100%;
+        height: 45px;
+        padding: 0;
+        flex-direction: row;
+        background: rgba(40, 40, 40, 0.95);
+        backdrop-filter: blur(12px);
+    }
+
+    body.dark-mode .tab-item {
+        writing-mode: horizontal-tb;
+        height: auto;
+        width: 33.333%;
+        padding: 16px 0;
+        color: #cccccc;
+        background-color: #222222;
+        font-weight: 500;
+        font-size: 15px;
+        transition: all 0.25s ease;
+    }
+
+    body.dark-mode .tab-item.active {
+        background: #333333 !important;
+        color: #ffffff !important;
+        font-weight: 600;
+    }
+
+    body.dark-mode .tab-item:hover:not(.active) {
+        background: rgba(255, 255, 255, 0.08);
+        color: #ffffff;
+    }
+
+    body.dark-mode .tab-text {
+        letter-spacing: normal;
+    }
+
+    body.dark-mode .settings-content {
+        background: rgba(45, 45, 45, 0.95);
+    }
+
+}

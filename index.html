@@ -152,127 +152,273 @@
         </div>
     </div>
 
-    <!-- 新增：壁纸选择弹窗（复用 modal-overlay 的结构，JS 里会切换内容） -->
+    <!-- 新增：主设置（复用 modal-overlay 的结构，JS 里会切换内容） -->
     <div id="main-modal" class="modal-overlay hidden">
-        <div class="modal glass-panel" style="max-height: 90vh; overflow-y: auto;">
-            <!-- 标题 -->
-            <h2 style="margin: 5px 0 20px; text-align: center; font-size: 22px; color: #333;">
-                设置中心
-            </h2>
+    <div class="settings-modal glass-panel">
+        <!-- 标题 -->
+        <h2 class="settings-title">设置中心</h2>
 
-            <!-- ============ 1. 自定义壁纸 ============ -->
-            <h3 style="margin: 20px 0 12px; font-size: 17px; color: #555;">自定义壁纸</h3>
-            <div class="main-options">
-
-                <label class="wallpaper-option upload main-option">
-                    <input type="file" id="wallpaper-file-input" accept="image/*">
-                    <span>从相册选择本地图片</span>
-                </label>
-
-                <div id="wallpaper-preview" class="wallpaper-preview hidden" style="margin: 10px auto; text-align: center;">
-                    <img id="wallpaper-preview-img" src="" alt="预览" style="display: block; max-width: 100%; max-height: 200px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+        <div class="settings-container">
+            <!-- ==================== 左侧竖排目录 ==================== -->
+            <div class="settings-sidebar">
+                <div class="tab-item active" data-target="appearance">
+                    <span class="tab-text">外观</span>
+                </div>
+                <div class="tab-item" data-target="model">
+                    <span class="tab-text">模型</span>
+                </div>
+                <div class="tab-item" data-target="storage">
+                    <span class="tab-text">存储</span>
+                </div>
+                <!-- ★ 新增世界书目录 ★ -->
+                <div class="tab-item" data-target="worldbook">
+                    <span class="tab-text">世界书</span>
                 </div>
             </div>
 
-            <!-- API 与模型设置（已包含密钥，无多余提示） -->
-            <h3 class="settings-section-title">API 与模型设置</h3>
-            <div class="main-options api-section">
+            <!-- ==================== 右侧内容区 ==================== -->
+            <div class="settings-content">
 
-                <!-- API 地址 -->
-                <div class="main-option api-input-card">
-                    <label class="api-label">API 地址，不加v1/chat/completions</label>
-                    <input type="url" id="custom-api-url" class="setting-input" 
-                        placeholder="例如: https://api.openai.com/v1">
-                </div>
+                <!-- ====================== 1. 外观 ====================== -->
+                <div class="tab-pane active" id="appearance">
 
-                <!-- API 密钥 -->
-                <div class="main-option api-input-card">
-                    <label class="api-label">API 密钥</label>
-                    <input type="password" id="custom-api-key" class="setting-input" 
-                        placeholder="sk-XXXXXXXXXXXXXXXXXXXXXXXX" autocomplete="off">
-                </div>
+                    <!-- 自定义壁纸 -->
+                    <h3 class="section-title">自定义壁纸</h3>
+                    <div class="main-options">
 
-            <!-- 模型选择 -->
-            <div class="main-option model-card">
-                <label for="custom-model-select" class="api-label2">模型</label>
+                        <label class="wallpaper-option upload main-option">
+                            <input type="file" id="wallpaper-file-input" accept="image/*">
+                            <span>从相册选择本地图片</span>
+                        </label>
 
-                <!-- 直接放置控制行，移除了多余的 .model-card div -->
-                <div class="model-row">
-                    <div class="model-row">
-                        <!-- 1. 这是一个输入框，id 还是叫 custom-model-select，为了兼容你的保存逻辑 -->
-                        <input type="text" id="custom-model-select" list="model-options" class="model-select" placeholder="手动输入或点击拉取...">
-                        
-                        <!-- 2. 这是一个隐藏的列表，id 叫 model-options，JS 就是在找它！ -->
-                        <datalist id="model-options">
-                            <!-- 这里的选项会被 JS 自动填充 -->
-                        </datalist>
+                        <div id="wallpaper-preview" class="wallpaper-preview hidden" style="margin: 10px auto; text-align: center;">
+                            <img id="wallpaper-preview-img" src="" alt="预览" style="display: block; max-width: 100%; max-height: 200px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                        </div>
                     </div>
-                    <button id="fetch-models-btn" class="fetch-models-btn">拉取模型</button>
+
+                    <!-- 显示模式 -->
+                    <h3 class="section-title">显示模式</h3>
+                    <div class="main-options">
+                        <label class="main-option" style="justify-content: space-between; cursor: pointer;">
+                            <div style="display:flex; align-items:center;">
+                                <span style="font-size: 18px; margin-right: 10px;">☀️</span>
+                                <span>日间模式</span>
+                            </div>
+                            <input type="radio" name="theme-select" id="theme-light" checked style="accent-color: #666;">
+                        </label>
+
+                        <label class="main-option" style="justify-content: space-between; cursor: pointer;">
+                            <div style="display:flex; align-items:center;">
+                                <span style="font-size: 18px; margin-right: 10px;">🌙</span>
+                                <span>夜间模式</span>
+                            </div>
+                            <input type="radio" name="theme-select" id="theme-dark" style="accent-color: #666;">
+                        </label>
+                    </div>
                 </div>
+
+                <!-- ====================== 2. 模型 ====================== -->
+                <div class="tab-pane" id="model">
+
+                    <h3 class="section-title">API 与模型设置</h3>
+                    <div class="main-options api-section">
+
+                        <!-- ★★★ 新增：预设管理区域 ★★★ -->
+                        <!-- 这里的 ID 必须和 JS 里对应，不要改 ID，class 可以随便改 -->
+                        <div id="api-preset-container" class="preset-row">
+                            <select id="preset-select" class="setting-input" style="flex:1;">
+                                <option value="">-- 选择 API 预设 --</option>
+                            </select>
+                            <div class="preset-btn-group">
+                                <button id="save-preset-btn" type="button" class="icon-btn">保存</button>
+                                <button id="del-preset-btn" type="button" class="icon-btn danger">删除</button>
+                            </div>
+                        </div>
+                        <!-- ★★★ 结束 ★★★ -->
+
+                        <!-- API 地址 -->
+                        <div class="main-option api-input-card">
+                            <label class="api-label">API 地址，不加v1/chat/completions</label>
+                            <input type="url" id="custom-api-url" class="setting-input" 
+                                placeholder="例如: https://api.openai.com/v1">
+                        </div>
+
+                        <!-- API 密钥 -->
+                        <div class="main-option api-input-card">
+                            <label class="api-label">API 密钥</label>
+                            <input type="password" id="custom-api-key" class="setting-input" 
+                                placeholder="sk-XXXXXXXXXXXXXXXXXXXXXXXX" autocomplete="off">
+                        </div>
+
+                        <!-- 模型选择 -->
+                        <div class="main-option model-card">
+                            <label for="custom-model-select" class="api-label2">模型</label>
+
+                            <div class="model-row">
+                                <div class="model-row" style="flex:1">
+                                    <input type="text" id="custom-model-select" list="model-options" class="model-select" placeholder="手动输入或点击拉取...">
+                                    <datalist id="model-options"></datalist>
+                                </div>
+                                <button id="fetch-models-btn" class="fetch-models-btn">拉取模型</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ====================== 3. 存储 ====================== -->
+                <div class="tab-pane" id="storage">
+
+                    <!-- 导入导出配置 -->
+                    <h3 class="section-title">导入导出配置</h3>
+                    <div class="main-options">
+                        <div class="main-option" onclick="exportData()" style="justify-content: center; font-weight: 500;">
+                            <span>导出当前配置（下载 JSON 文件）</span>
+                        </div>
+
+                        <label class="main-option" style="justify-content: center; font-weight: 500; cursor: pointer;">
+                            <span>从备份文件导入配置</span>
+                            <input type="file" id="file" accept=".json,application/json" 
+                                style="display: none;" onchange="importData(this)">
+                        </label>
+                    </div>
+
+                    <!-- GitHub Gist 云同步 -->
+                    <h3 class="section-title">GitHub Gist 云同步（多设备同步）</h3>
+                    <div class="gist-sync-card">
+                        <div class="input-group">
+                            <label class="input-label">GitHub Personal Access Token</label>
+                            <input type="password" id="gist-token" class="setting-input" 
+                                placeholder="只勾选 gist 权限即可" autocomplete="off">
+                            <small class="input-hint">
+                                填写Token→【先】点保存→再开始备份或恢复
+                            </small>
+                        </div>
+
+                        <input type="text" id="gist-id-input" placeholder="Gist ID (通常在恢复时手动填写)">
+                        <button id="gist-find">查找Gist ID</button>
+
+                        <div class="gist-buttons">
+                            <button type="button" id="gist-create-and-backup" class="gist-btn primary">
+                                创建并备份
+                            </button>
+                            <button type="button" id="gist-backup" class="gist-btn">
+                                更新云端备份
+                            </button>
+                            <button type="button" id="gist-restore" class="gist-btn">
+                                从云端恢复
+                            </button>
+                        </div>
+
+                        <div id="gist-status" class="gist-status">
+                            点击“创建并备份”测试连接状态
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ★★★★★ 4. 新增：世界书 (Refactored for Books) ★★★★★ -->
+                <div id="worldbook" class="tab-pane">
+                    <div class="wi-container">
+                        
+                        <!-- 1. 顶部：大分类（书）管理栏 -->
+                        <div class="wi-toolbar glass-card">
+                            <div class="wi-toolbar-group main-select">
+                                <label>当前世界书:</label>
+                                <!-- 选择大分类 -->
+                                <select id="wi-book-select" class="wi-select setting-input">
+                                    <!-- JS会自动填充 -->
+                                </select>
+                            </div>
+
+                            <div class="wi-toolbar-divider"></div>
+
+                            <!-- 针对书的操作 -->
+                            <div class="wi-toolbar-group actions">
+                                <button id="wi-rename-book-btn" class="wi-btn secondary" title="重命名当前书">重命名</button>
+                                <button id="wi-export-book-btn" class="wi-btn secondary" title="导出当前书为JSON">导出</button>
+                                <button id="wi-delete-book-btn" class="wi-btn danger" title="删除整本书">删书</button>
+                            </div>
+                            
+                            <div class="wi-toolbar-divider vertical"></div>
+
+                            <!-- 全局操作 -->
+                            <div class="wi-toolbar-group global-actions">
+                                <button id="wi-new-book-btn" class="wi-btn primary">+ 新建书</button>
+                                <button id="wi-import-btn" class="wi-btn primary">导入ST</button>
+                                <input type="file" id="wi-file-input" accept=".json" style="display: none;">
+                            </div>
+                        </div>
+
+                        <!-- 2. 下方主体：左右分栏 -->
+                        <div class="wi-main-layout">
+                            
+                            <!-- 左栏：当前书内的条目列表 -->
+                            <div class="wi-sidebar glass-card">
+                                <div class="wi-sidebar-header">
+                                    <span>条目列表</span>
+                                    <button id="wi-add-btn" class="wi-btn icon-only" title="添加条目">+</button>
+                                </div>
+                                
+                                <div id="wi-list-container" class="wi-list-scroll">
+                                    <!-- JS 会渲染条目到这里 -->
+                                </div>
+                            </div>
+
+                            <!-- 右栏：编辑区 -->
+                            <div class="wi-editor glass-card">
+                                
+                                <!-- A. 本书全局设定 -->
+                                <div class="wi-section-card">
+                                    <h4 class="wi-section-title">📚 本书设定 <span class="sub-text">(对整本书生效)</span></h4>
+                                    <label class="wi-input-row">
+                                        <span>生效范围:</span>
+                                        <select id="wi-book-char-select" class="wi-select setting-input">
+                                            <option value="">全局 (对所有角色生效)</option>
+                                            <!-- JS会填充角色 -->
+                                        </select>
+                                    </label>
+                                </div>
+
+                                <!-- B. 单个条目编辑 -->
+                                <div class="wi-edit-area">
+                                    <div class="wi-edit-header">
+                                        <h4 class="wi-section-title">📝 条目编辑</h4>
+                                        <div class="wi-checkbox-wrapper">
+                                            <input type="checkbox" id="wi-edit-constant">
+                                            <label for="wi-edit-constant">常驻 (无视关键词，永远生效)</label>
+                                        </div>
+                                    </div>
+
+                                    <input type="hidden" id="wi-edit-uid">
+                                    
+                                    <div class="wi-form-group">
+                                        <label>触发关键词 <span class="sub-text">(逗号分隔)</span></label>
+                                        <input type="text" id="wi-edit-keys" class="setting-input" placeholder="例如: 森林, 魔法 (留空仅依靠常驻生效)">
+                                    </div>
+
+                                    <div class="wi-form-group flex-grow">
+                                        <label>设定内容 <span class="sub-text">(支持 {{user}}, {{char}})</span></label>
+                                        <textarea id="wi-edit-content" class="setting-input wi-textarea" placeholder="当检测到关键词时，注入给AI的内容..."></textarea>
+                                    </div>
+
+                                    <div class="wi-form-actions">
+                                        <button id="wi-delete-btn" class="wi-btn danger">删除条目</button>
+                                        <button id="wi-save-btn" class="wi-btn primary large">保存条目</button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 世界书结束 -->
+
             </div>
+        </div>
 
-            <!-- ============ 2. 导入导出配置 ============ -->
-            <h3 style="margin: 30px 0 12px; font-size: 17px; color: #555;">导入导出配置</h3>
-            <div class="main-options">
-                <!-- 导出按钮 -->
-                <div class="main-option" onclick="exportData()" style="justify-content: center; font-weight: 500;">
-                    <span>导出当前配置（下载 JSON 文件）</span>
-                </div>
-
-                <!-- 导入按钮（伪装成卡片） -->
-                <label class="main-option" style="justify-content: center; font-weight: 500; cursor: pointer;">
-                    <span>从备份文件导入配置</span>
-                    <input type="file" id="file" accept=".json,application/json" 
-                        style="display: none;" onchange="importData(this)">
-                </label>
-            </div>
-
-            <!-- ============ 3. GitHub Gist 云同步 ============ -->
-            <h3 class="section-title">GitHub Gist 云同步（多设备同步）</h3>
-
-            <div class="gist-sync-card">
-                <!-- Token 输入框 -->
-                <div class="input-group">
-                    <label class="input-label">GitHub Personal Access Token</label>
-                    <input 
-                        type="password" 
-                        id="gist-token" 
-                        class="setting-input" 
-                        placeholder="只勾选 gist 权限即可" 
-                        autocomplete="off">
-                    <small class="input-hint">
-                        填写Token→【先】点保存→再开始备份或恢复
-                    </small>
-                </div>
-
-                <!-- Gist ID 输入/显示框 (新增) -->
-                <input type="text" id="gist-id-input" placeholder="Gist ID (通常在恢复时手动填写)">
-                <button id="gist-find">查找Gist ID</button>
-
-                <!-- 三个按钮 -->
-                <div class="gist-buttons">
-                    <button type="button" id="gist-create-and-backup" class="gist-btn primary">
-                        创建并备份
-                    </button>
-                    <button type="button" id="gist-backup" class="gist-btn">
-                        更新云端备份
-                    </button>
-                    <button type="button" id="gist-restore" class="gist-btn">
-                        从云端恢复
-                    </button>
-                </div>
-
-                <!-- 状态提示区 -->
-                <div id="gist-status" class="gist-status">
-                    点击“创建并备份”测试连接状态<!-- JS 会在这里显示状态 -->
-                </div>
-            </div>
-
-            <!-- ============ 底部按钮 ============ -->
-            <div class="modal-buttons" style="margin-top: 30px; display: flex; gap: 12px; justify-content: center;">
-                <button id="main-cancel" style="padding: 12px 28px; font-size: 16px;">取消</button>
-                <button id="main-confirm" class="primary" style="padding: 12px 32px; font-size: 16px;">应用并关闭</button>
-            </div>
+        <!-- 底部按钮 -->
+        <div class="modal-buttons" style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
+            <button id="main-cancel" style="padding: 12px 28px; font-size: 16px;">取消</button>
+            <button id="main-confirm" class="primary" style="padding: 12px 32px; font-size: 16px;">应用并关闭</button>
         </div>
     </div>
 
