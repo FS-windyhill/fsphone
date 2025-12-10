@@ -1,7 +1,13 @@
 /**
- * TeleWindy Core Logic - Refactored (v2.0)
- * 包含：核心对话、Gist云备份、日夜模式、文件导入导出
+ * TeleWindy Core Logic - Refactored
+ * 结构说明：
+ * 1. CONFIG & STATE: 全局配置常量与运行时状态
+ * 2. STORAGE SERVICE: 负责数据的持久化 (LocalStorage)
+ * 3. API SERVICE: 负责与 LLM 通信及模型拉取
+ * 4. UI RENDERER: 负责界面的 DOM 操作与渲染
+ * 5. APP CONTROLLER: 核心业务逻辑 (事件绑定、初始化)
  */
+
 
 // =========================================
 // 1. CONFIG & STATE (配置与状态)
@@ -10,7 +16,7 @@
 const CONFIG = {
     STORAGE_KEY: 'teleWindy_char_data_v1',
     SETTINGS_KEY: 'teleWindy_settings_v1', 
-    GIST_ID_KEY: 'telewindy-gist-id',      // 专门存 Gist ID 的 Key
+    GIST_ID_KEY: 'telewindy-gist-id',
     DEFAULT: {
         API_URL: 'https://api.siliconflow.cn/v1/chat/completions',
         MODEL: 'zai-org/GLM-4.6',
@@ -18,7 +24,8 @@ const CONFIG = {
         WALLPAPER: 'wallpaper.jpg',
         USER_AVATAR: 'user.jpg',
         GIST_TOKEN: '',
-        THEME: 'light' // ★★★ 新增：默认日间模式
+        THEME: 'light',
+        API_PRESETS: [] // ★★★ 新增：API 预设列表
     },
     SYSTEM_PROMPT: `
 请完全代入角色设定，以该角色的语气和思考方式，与用户交流。
@@ -47,17 +54,20 @@ const Storage = {
         const settingsRaw = localStorage.getItem(CONFIG.SETTINGS_KEY);
         let loadedSettings = settingsRaw ? JSON.parse(settingsRaw) : {};
 
-        // 兼容旧版散装存储的 Theme (如果有)
+        // 兼容旧版 Theme
         const legacyTheme = localStorage.getItem('appTheme');
         if (legacyTheme) {
             loadedSettings.THEME = legacyTheme;
-            localStorage.removeItem('appTheme'); // 迁移后删除旧key
+            localStorage.removeItem('appTheme');
         }
 
-        // 合并默认值
+        // 合并默认值 (确保 API_PRESETS 存在)
         STATE.settings = { ...CONFIG.DEFAULT, ...loadedSettings };
+        if (!Array.isArray(STATE.settings.API_PRESETS)) {
+            STATE.settings.API_PRESETS = [];
+        }
 
-        // 兼容旧的散装头像壁纸
+        // 兼容旧头像壁纸
         if (!settingsRaw) {
             const oldUserAvatar = localStorage.getItem('fs_user_avatar');
             const oldWallpaper = localStorage.getItem('fs_wallpaper');
@@ -71,7 +81,7 @@ const Storage = {
             STATE.contacts = JSON.parse(contactsRaw);
         }
 
-        // 兜底：如果没有联系人
+        // 兜底默认联系人
         if (STATE.contacts.length === 0) {
             STATE.contacts.push({
                 id: Date.now().toString(),
@@ -91,15 +101,14 @@ const Storage = {
         localStorage.setItem(CONFIG.SETTINGS_KEY, JSON.stringify(STATE.settings));
     },
     
-    // 获取用于备份的所有数据
+    // 导出备份逻辑
     exportAllForBackup() {
         const data = {};
-        // 遍历所有 LocalStorage
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             const value = localStorage.getItem(key);
             
-            // 特殊处理设置中的 Token 加密
+            // Token 加密保护
             if (key === CONFIG.SETTINGS_KEY) {
                 try {
                     const settings = JSON.parse(value);
@@ -118,12 +127,11 @@ const Storage = {
         return data;
     },
 
-    // 恢复备份数据
+    // 导入备份逻辑
     importFromBackup(data) {
         localStorage.clear();
         Object.keys(data).forEach(key => {
             let value = data[key];
-            // 特殊处理设置中的 Token 解密
             if (key === CONFIG.SETTINGS_KEY) {
                 try {
                     const settings = JSON.parse(value);
@@ -179,7 +187,7 @@ const API = {
                 model: MODEL,
                 system: sysPrompts,
                 messages: [{ role: "user", content: lastUserMsg }],
-                max_tokens: 4096,
+                max_tokens: 10000,
                 temperature: 1.1
             });
         } else if (provider === 'gemini') {
@@ -187,19 +195,20 @@ const API = {
             options.body = JSON.stringify({
                 contents: [{ role: 'user', parts: [{ text: lastUserMsg }] }],
                 system_instruction: { parts: [{ text: sysPrompts }] },
-                generationConfig: { temperature: 1.1, maxOutputTokens: 4096 }
+                generationConfig: { temperature: 1.1, maxOutputTokens: 10000 }
             });
         } else {
-            // OpenAI Standard
+            // OpenAI Standard (SiliconFlow, DeepSeek, etc.)
             options.headers['Authorization'] = `Bearer ${API_KEY}`;
             options.body = JSON.stringify({
                 model: MODEL,
                 messages: messages,
                 temperature: 1.1,
-                max_tokens: 4096
+                max_tokens: 10000
             });
         }
 
+        //这个不要删掉哦！！！！！
         console.log(`[${provider}] Sending...`, JSON.parse(options.body));
 
         const response = await fetch(fetchUrl, options);
@@ -220,7 +229,6 @@ const API = {
 // 4. CLOUD SYNC (Gist 同步服务)
 // =========================================
 const CloudSync = {
-    // UI 引用
     els: {
         token: document.getElementById('gist-token'),
         idInput: document.getElementById('gist-id-input'),
@@ -229,13 +237,14 @@ const CloudSync = {
 
     init() {
         const savedId = localStorage.getItem(CONFIG.GIST_ID_KEY);
-        if (savedId) {
+        if (savedId && this.els.idInput) {
             this.els.idInput.value = savedId;
             this.showStatus(`本地加载 Gist ID: ${savedId.slice(0, 6)}...`, false);
         }
     },
 
     showStatus(msg, isError = false) {
+        if(!this.els.status) return;
         this.els.status.textContent = msg;
         this.els.status.style.color = isError ? '#d32f2f' : '#2e7d32';
     },
@@ -321,7 +330,7 @@ const CloudSync = {
 
     async updateBackup() {
         const token = this.getToken();
-        const gistId = this.els.idInput.value.trim();
+        const gistId = this.els.idInput ? this.els.idInput.value.trim() : null;
         if (!token || !gistId) return this.showStatus('缺少 Token 或 Gist ID', true);
 
         this.showStatus('正在同步更新...');
@@ -354,7 +363,7 @@ const CloudSync = {
 
     async restoreBackup() {
         const token = this.getToken();
-        const gistId = this.els.idInput.value.trim();
+        const gistId = this.els.idInput ? this.els.idInput.value.trim() : null;
         if (!token || !gistId) return this.showStatus('缺少 Token 或 Gist ID', true);
 
         this.showStatus('正在拉取恢复...');
@@ -374,7 +383,6 @@ const CloudSync = {
                 content = await rawRes.text();
             }
 
-            // 修复可能存在的控制字符
             const cleaned = content.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
             const backupData = JSON.parse(cleaned);
 
@@ -393,7 +401,6 @@ const CloudSync = {
 // 5. UI RENDERER (DOM 操作)
 // =========================================
 const UI = {
-    // 缓存常用 DOM
     els: {
         viewList: document.getElementById('view-contact-list'),
         viewChat: document.getElementById('view-chat'),
@@ -407,7 +414,6 @@ const UI = {
         modalOverlay: document.getElementById('modal-overlay'),
         mainModal: document.getElementById('main-modal'), 
         
-        // Settings Inputs
         settingUrl: document.getElementById('custom-api-url'),
         settingKey: document.getElementById('custom-api-key'),
         settingModel: document.getElementById('custom-model-select'),
@@ -419,21 +425,15 @@ const UI = {
     init() {
         this.applyAppearance();
         this.renderContacts();
-        CloudSync.init(); // 初始化云同步 ID 显示
+        CloudSync.init();
     },
 
-    // ★★★ 统一管理外观 (壁纸 + 日夜模式) ★★★
     applyAppearance() {
         const { WALLPAPER, THEME } = STATE.settings;
-        
-        // 1. 设置壁纸
         document.body.style.backgroundImage = `url('${WALLPAPER}')`;
-        // 如果是默认壁纸且是日间模式，给个浅灰底色
         if (WALLPAPER === 'wallpaper.jpg' && THEME !== 'dark') {
             document.body.style.backgroundColor = '#f2f2f2';
         }
-
-        // 2. 设置日夜模式 Class
         if (THEME === 'dark') {
             document.body.classList.add('dark-mode');
             if(this.els.themeDark) this.els.themeDark.checked = true;
@@ -462,18 +462,17 @@ const UI = {
     },
 
     renderContacts() {
+        if(!this.els.contactContainer) return;
         this.els.contactContainer.innerHTML = '';
         STATE.contacts.forEach(c => {
             const item = document.createElement('div');
             item.className = 'contact-item';
             
-            // 头像处理
             let avatarHtml = `<div class="contact-avatar">${c.avatar || '🌼'}</div>`;
             if (c.avatar.startsWith('data:') || c.avatar.startsWith('http')) {
                 avatarHtml = `<img src="${c.avatar}" class="contact-avatar" onerror="this.style.display='none'">`;
             }
 
-            // 预览消息
             let lastMsg = "暂无消息";
             const validMsgs = c.history.filter(m => m.role !== 'system');
             if (validMsgs.length > 0) {
@@ -500,11 +499,9 @@ const UI = {
         contact.history.forEach(msg => {
             if (msg.role === 'system') return;
             const sender = msg.role === 'assistant' ? 'ai' : 'user';
-
             const cleanText = typeof msg === 'string' ? msg : msg.content || '';
             const msgTime = typeof msg === 'string' ? null : msg.timestamp;
             
-            // 分段渲染逻辑
             const paragraphs = cleanText.split(/\n\s*\n/).filter(p => p.trim());
             if (paragraphs.length > 0) {
                 paragraphs.forEach(p => this.appendMessageBubble(p.trim(), sender, contact.avatar, msgTime));
@@ -597,6 +594,35 @@ const UI = {
             if (i > 0) await new Promise(r => setTimeout(r, 400));
             this.appendMessageBubble(paragraphs[i], 'ai', avatar, timestamp);
         }
+    },
+
+    // ★★★ API 预设菜单 UI (逻辑修正版) ★★★
+    renderPresetMenu() {
+        const containerId = 'api-preset-container';
+        let container = document.getElementById(containerId);
+
+       // 核心：无论 HTML 是手写的还是 JS生成的，都要绑定事件和刷新列表
+        if (container) {
+            // 绑定事件 (覆盖 onclick 确保生效)
+            const saveBtn = document.getElementById('save-preset-btn');
+            const delBtn = document.getElementById('del-preset-btn');
+            const select = document.getElementById('preset-select');
+
+            if(saveBtn) saveBtn.onclick = () => App.handleSavePreset();
+            if(delBtn) delBtn.onclick = () => App.handleDeletePreset();
+            if(select) select.onchange = (e) => App.handleLoadPreset(e.target.value);
+
+            // 刷新下拉列表数据
+            select.innerHTML = '<option value="">-- 选择 API 预设 --</option>';
+            if (STATE.settings.API_PRESETS && Array.isArray(STATE.settings.API_PRESETS)) {
+                STATE.settings.API_PRESETS.forEach((p, index) => {
+                    const opt = document.createElement('option');
+                    opt.value = index;
+                    opt.innerText = p.name;
+                    select.appendChild(opt);
+                });
+            }
+        }
     }
 };
 
@@ -658,17 +684,11 @@ const App = {
                 UI.appendMessageBubble(userText, 'user', null, timestamp);
             }
 
-            contact.history.push({ 
-                role: 'user', 
-                content: userText,
-                timestamp: timestamp 
-            });
-            
+            contact.history.push({ role: 'user', content: userText, timestamp: timestamp });
             UI.els.input.value = '';            
             UI.els.input.style.height = '38px'; 
             
-            const isMobile = window.innerWidth < 800;
-            if (isMobile) UI.els.input.blur();
+            if (window.innerWidth < 800) UI.els.input.blur();
             else UI.els.input.focus(); 
         }        
 
@@ -697,16 +717,10 @@ const App = {
         try {
             const aiText = await API.chat(messagesToSend, STATE.settings);
             const aiTimestamp = formatTimestamp();
-            contact.history.push({ 
-                role: 'assistant', 
-                content: aiText,
-                timestamp: aiTimestamp
-            });
+            contact.history.push({ role: 'assistant', content: aiText, timestamp: aiTimestamp });
             Storage.saveContacts();
-            
             UI.setLoading(false);
             await UI.playWaterfall(aiText, contact.avatar, aiTimestamp)
-
         } catch (error) {
             console.error(error);
             UI.setLoading(false);
@@ -723,16 +737,60 @@ const App = {
         UI.els.settingUrl.value = s.API_URL || '';
         UI.els.settingKey.value = s.API_KEY || '';
         UI.els.settingModel.value = s.MODEL || 'zai-org/GLM-4.6';
-        document.getElementById('gist-token').value = s.GIST_TOKEN || ''; // 填充 Gist Token
+        if (document.getElementById('gist-token')) document.getElementById('gist-token').value = s.GIST_TOKEN || ''; 
         
-        // 填充模型Select
         if (s.MODEL) UI.els.settingModel.innerHTML = `<option value="${s.MODEL}">${s.MODEL}</option>`;
         
-        // 预览壁纸
         const previewImg = document.getElementById('wallpaper-preview-img');
         if (s.WALLPAPER && s.WALLPAPER.startsWith('data:')) {
             previewImg.src = s.WALLPAPER;
             document.getElementById('wallpaper-preview').classList.remove('hidden');
+        }
+
+        // 渲染 API 预设 UI
+        UI.renderPresetMenu();
+    },
+
+    // ★★★ API 预设逻辑 ★★★
+    handleSavePreset() {
+        const name = prompt("请为当前配置输入一个预设名称 (如: Gemini Pro)");
+        if (!name) return;
+
+        const preset = {
+            name: name,
+            url: UI.els.settingUrl.value.trim(),
+            key: UI.els.settingKey.value.trim(),
+            model: UI.els.settingModel.value
+        };
+
+        if(!preset.url || !preset.key) return alert("请先填好 API 地址和密钥！");
+
+        STATE.settings.API_PRESETS.push(preset);
+        Storage.saveSettings();
+        UI.renderPresetMenu(); // 刷新列表
+    },
+
+    handleLoadPreset(index) {
+        if (index === "") return;
+        const preset = STATE.settings.API_PRESETS[index];
+        if (preset) {
+            UI.els.settingUrl.value = preset.url;
+            UI.els.settingKey.value = preset.key;
+            // 更新模型Select
+            UI.els.settingModel.innerHTML = `<option value="${preset.model}">${preset.model}</option>`;
+            UI.els.settingModel.value = preset.model;
+        }
+    },
+
+    handleDeletePreset() {
+        const select = document.getElementById('preset-select');
+        const index = select.value;
+        if (index === "") return alert("请先选择一个预设");
+        
+        if (confirm(`确定删除 "${STATE.settings.API_PRESETS[index].name}" 吗？`)) {
+            STATE.settings.API_PRESETS.splice(index, 1);
+            Storage.saveSettings();
+            UI.renderPresetMenu();
         }
     },
 
@@ -749,9 +807,9 @@ const App = {
         s.API_URL = rawUrl;
         s.API_KEY = UI.els.settingKey.value.trim();
         s.MODEL = UI.els.settingModel.value;
-        s.GIST_TOKEN = document.getElementById('gist-token').value.trim() || ''; 
+        const tEl = document.getElementById('gist-token');
+        if(tEl) s.GIST_TOKEN = tEl.value.trim() || ''; 
 
-        // 壁纸逻辑
         const wallpaperPreview = document.getElementById('wallpaper-preview-img').src;
         if(wallpaperPreview && wallpaperPreview.startsWith('data:')) {
             s.WALLPAPER = wallpaperPreview;
@@ -760,80 +818,104 @@ const App = {
         }
 
         Storage.saveSettings();
-        UI.applyAppearance(); // 立即应用（包含日夜模式）
+        UI.applyAppearance(); 
         UI.els.mainModal.classList.add('hidden');
         alert(`设置已保存！\nAPI 地址已自动规范化为：\n${rawUrl}`);
     },
 
     bindEvents() {
-        // --- 输入与发送 ---
-        UI.els.input.style.overflowY = 'hidden'; 
-        UI.els.input.addEventListener('input', function() {
-            this.style.height = 'auto'; 
-            this.style.height = (this.scrollHeight) + 'px';
-            if (this.value === '') this.style.height = '38px';
+        // --- Tab 切换 (便签切换小工具) ---
+        // 移到这里是为了确保 DOM 元素已经存在，并且逻辑统一管理
+        document.querySelectorAll('.tab-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const target = item.dataset.target;
+                document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                item.classList.add('active');
+                const pane = document.getElementById(target);
+                if(pane) pane.classList.add('active');
+            });
         });
 
-        UI.els.sendBtn.onclick = () => this.handleSend(false);
-        UI.els.input.onkeydown = (e) => {
-            const isMobile = window.innerWidth < 800;
-            if (e.key === "Enter" && !e.shiftKey && !isMobile) {
-                e.preventDefault(); 
-                App.handleSend(false);
-            }
-        };
-        UI.els.rerollBtn.onclick = () => this.handleSend(true);
-        document.getElementById('back-btn').onclick = () => UI.switchView('list');
+        // --- 输入与发送 ---
+        if(UI.els.input) {
+            UI.els.input.style.overflowY = 'hidden'; 
+            UI.els.input.addEventListener('input', function() {
+                this.style.height = 'auto'; 
+                this.style.height = (this.scrollHeight) + 'px';
+                if (this.value === '') this.style.height = '38px';
+            });
+            UI.els.input.onkeydown = (e) => {
+                const isMobile = window.innerWidth < 800;
+                if (e.key === "Enter" && !e.shiftKey && !isMobile) {
+                    e.preventDefault(); 
+                    App.handleSend(false);
+                }
+            };
+        }
+
+        if(UI.els.sendBtn) UI.els.sendBtn.onclick = () => this.handleSend(false);
+        if(UI.els.rerollBtn) UI.els.rerollBtn.onclick = () => this.handleSend(true);
+        const backBtn = document.getElementById('back-btn');
+        if(backBtn) backBtn.onclick = () => UI.switchView('list');
 
         // --- 主设置弹窗 ---
-        document.getElementById('main-settings-btn').onclick = () => this.openSettings();
-        document.getElementById('main-cancel').onclick = () => UI.els.mainModal.classList.add('hidden');
-        document.getElementById('main-confirm').onclick = () => this.saveSettingsFromUI();
-        UI.els.fetchBtn.onclick = () => this.fetchModelsForUI();
+        const mainSetBtn = document.getElementById('main-settings-btn');
+        if(mainSetBtn) mainSetBtn.onclick = () => this.openSettings();
+        const mainCancel = document.getElementById('main-cancel');
+        if(mainCancel) mainCancel.onclick = () => UI.els.mainModal.classList.add('hidden');
+        const mainConfirm = document.getElementById('main-confirm');
+        if(mainConfirm) mainConfirm.onclick = () => this.saveSettingsFromUI();
+        if(UI.els.fetchBtn) UI.els.fetchBtn.onclick = () => this.fetchModelsForUI();
 
-        // ★★★ 日夜模式切换 ★★★
-        if (UI.els.themeLight) {
-            UI.els.themeLight.addEventListener('change', () => UI.toggleTheme('light'));
+        // 日夜模式
+        if (UI.els.themeLight) UI.els.themeLight.addEventListener('change', () => UI.toggleTheme('light'));
+        if (UI.els.themeDark) UI.els.themeDark.addEventListener('change', () => UI.toggleTheme('dark'));
+
+        // 壁纸
+        const wpInput = document.getElementById('wallpaper-file-input');
+        if(wpInput) {
+            wpInput.onchange = async (e) => {
+                if(e.target.files[0]) {
+                    const base64 = await this.readFile(e.target.files[0]);
+                    document.getElementById('wallpaper-preview-img').src = base64;
+                    document.getElementById('wallpaper-preview').classList.remove('hidden');
+                }
+            };
         }
-        if (UI.els.themeDark) {
-            UI.els.themeDark.addEventListener('change', () => UI.toggleTheme('dark'));
-        }
 
-        // --- 壁纸上传 ---
-        document.getElementById('wallpaper-file-input').onchange = async (e) => {
-            if(e.target.files[0]) {
-                const base64 = await this.readFile(e.target.files[0]);
-                document.getElementById('wallpaper-preview-img').src = base64;
-                document.getElementById('wallpaper-preview').classList.remove('hidden');
-            }
-        };
-
-        // --- 角色编辑弹窗 ---
-        const modal = document.getElementById('modal-overlay');
-        document.getElementById('add-contact-btn').onclick = () => this.openEditModal(null);
-        document.getElementById('chat-settings-btn').onclick = () => this.openEditModal(STATE.currentContactId);
-        document.getElementById('modal-cancel').onclick = () => modal.classList.add('hidden');
-        document.getElementById('modal-save').onclick = () => { this.saveContactFromModal(); modal.classList.add('hidden'); };
+        // 角色编辑
+        const addBtn = document.getElementById('add-contact-btn');
+        if(addBtn) addBtn.onclick = () => this.openEditModal(null);
+        const chatSetBtn = document.getElementById('chat-settings-btn');
+        if(chatSetBtn) chatSetBtn.onclick = () => this.openEditModal(STATE.currentContactId);
         
-        document.getElementById('modal-delete').onclick = () => {
+        const modalCancel = document.getElementById('modal-cancel');
+        if(modalCancel) modalCancel.onclick = () => document.getElementById('modal-overlay').classList.add('hidden');
+        const modalSave = document.getElementById('modal-save');
+        if(modalSave) modalSave.onclick = () => { this.saveContactFromModal(); document.getElementById('modal-overlay').classList.add('hidden'); };
+        
+        const modalDel = document.getElementById('modal-delete');
+        if(modalDel) modalDel.onclick = () => {
              if (confirm('删除角色？')) {
                  STATE.contacts = STATE.contacts.filter(c => c.id !== this.editingId);
                  Storage.saveContacts();
-                 modal.classList.add('hidden');
+                 document.getElementById('modal-overlay').classList.add('hidden');
                  if(STATE.currentContactId === this.editingId) document.getElementById('back-btn').click();
                  else UI.renderContacts();
              }
         };
-        document.getElementById('modal-clear-history').onclick = () => {
+        const modalClear = document.getElementById('modal-clear-history');
+        if(modalClear) modalClear.onclick = () => {
             if(confirm('清空聊天记录？')) {
                 const c = STATE.contacts.find(x => x.id === this.editingId);
                 if(c) { c.history = []; Storage.saveContacts(); }
-                modal.classList.add('hidden');
+                document.getElementById('modal-overlay').classList.add('hidden');
                 if(STATE.currentContactId === this.editingId) UI.renderChatHistory(c);
             }
         };
 
-        // --- 头像上传 ---
+        // 头像上传
         this.bindImageUpload('edit-avatar-file', 'edit-avatar-preview', 'edit-avatar'); 
         this.bindImageUpload('user-avatar-file', 'user-avatar-preview', null, (base64) => {
             STATE.settings.USER_AVATAR = base64;
@@ -843,18 +925,24 @@ const App = {
                 if(c) UI.renderChatHistory(c);
             }
         });
-        document.getElementById('edit-avatar-upload-btn').onclick = () => document.getElementById('edit-avatar-file').click();
-        document.getElementById('user-avatar-upload-btn').onclick = () => document.getElementById('user-avatar-file').click();
+        const editUpBtn = document.getElementById('edit-avatar-upload-btn');
+        if(editUpBtn) editUpBtn.onclick = () => document.getElementById('edit-avatar-file').click();
+        const userUpBtn = document.getElementById('user-avatar-upload-btn');
+        if(userUpBtn) userUpBtn.onclick = () => document.getElementById('user-avatar-file').click();
 
-        // --- ★★★ Cloud Sync (Gist) 事件绑定 ★★★ ---
-        document.getElementById('gist-find').onclick = () => CloudSync.findBackup();
-        document.getElementById('gist-create-and-backup').onclick = () => CloudSync.createBackup();
-        document.getElementById('gist-backup').onclick = () => CloudSync.updateBackup();
-        document.getElementById('gist-restore').onclick = () => CloudSync.restoreBackup();
-        document.getElementById('gist-id-input').onchange = (e) => CloudSync.updateGistId(e.target.value);
+        // Gist Events
+        const gistFind = document.getElementById('gist-find');
+        if(gistFind) gistFind.onclick = () => CloudSync.findBackup();
+        const gistCreate = document.getElementById('gist-create-and-backup');
+        if(gistCreate) gistCreate.onclick = () => CloudSync.createBackup();
+        const gistBackup = document.getElementById('gist-backup');
+        if(gistBackup) gistBackup.onclick = () => CloudSync.updateBackup();
+        const gistRestore = document.getElementById('gist-restore');
+        if(gistRestore) gistRestore.onclick = () => CloudSync.restoreBackup();
+        const gistIdInput = document.getElementById('gist-id-input');
+        if(gistIdInput) gistIdInput.onchange = (e) => CloudSync.updateGistId(e.target.value);
     },
 
-    // 辅助：读取文件转Base64
     readFile(file) {
         return new Promise((r, j) => {
             const reader = new FileReader();
@@ -864,7 +952,6 @@ const App = {
         });
     },
 
-    // 辅助：拉取模型列表逻辑
     async fetchModelsForUI() {
         const url = UI.els.settingUrl.value.trim();
         const key = UI.els.settingKey.value.trim();
@@ -875,20 +962,21 @@ const App = {
         try {
             const data = await API.fetchModels(url, key);
             const datalist = document.getElementById('model-options');
-            datalist.innerHTML = '';
+            if(datalist) datalist.innerHTML = '';
             if (data.data && Array.isArray(data.data)) {
                 data.data.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m.id;
-                    datalist.appendChild(opt);
+                    if(datalist) {
+                        const opt = document.createElement('option');
+                        opt.value = m.id;
+                        datalist.appendChild(opt);
+                    }
                 });
                 if (data.data.length > 0) {
                     UI.els.settingModel.value = data.data[0].id;
-                    // 这里不直接存STATE，等用户点保存
                 }
                 alert(`成功拉取 ${data.data.length} 个模型！`);
             } else {
-                alert('连接成功，但对方没有返回有效的模型列表。');
+                alert('连接成功，但对方没有返回有效的模型列表，请手动输入。');
             }
         } catch (e) {
             console.error(e);
@@ -899,7 +987,6 @@ const App = {
         }
     },
 
-    // 辅助：图片上传绑定
     bindImageUpload(inputId, imgId, inputUrlId, callback) {
         const el = document.getElementById(inputId);
         if(!el) return;
@@ -913,7 +1000,6 @@ const App = {
         };
     },
     
-    // 辅助：角色弹窗
     openEditModal(id) {
         this.editingId = id;
         const modal = document.getElementById('modal-overlay');
@@ -924,7 +1010,7 @@ const App = {
         const iPrompt = document.getElementById('edit-prompt');
         const preview = document.getElementById('edit-avatar-preview');
         const userPreview = document.getElementById('user-avatar-preview');
-        userPreview.src = STATE.settings.USER_AVATAR || 'user.jpg';
+        if(userPreview) userPreview.src = STATE.settings.USER_AVATAR || 'user.jpg';
 
         if (id) {
             const c = STATE.contacts.find(x => x.id === id);
@@ -978,7 +1064,7 @@ function formatTimestamp() {
     return `${months[now.getMonth()]}.${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 }
 
-// 供HTML按钮直接调用的文件导入导出（保留全局暴露）
+// 供HTML按钮直接调用的全局函数
 window.exportData = () => {
     const data = JSON.stringify(Storage.exportAllForBackup(), null, 2);
     const blob = new Blob([data], {type: 'application/json'});
@@ -1009,23 +1095,3 @@ window.importData = (input) => {
 
 // 启动应用
 window.onload = () => App.init();
-
-
-// 小工具
-// 便签
-
-// 设置中心左侧目录切换
-document.querySelectorAll('.tab-item').forEach(item => {
-    item.addEventListener('click', () => {
-        const target = item.dataset.target;
-
-        // 切换 active 类
-        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-
-        item.classList.add('active');
-        document.getElementById(target).classList.add('active');
-    });
-});
-
-

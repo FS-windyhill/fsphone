@@ -219,6 +219,19 @@
                     <h3 class="section-title">API 与模型设置</h3>
                     <div class="main-options api-section">
 
+                        <!-- ★★★ 新增：预设管理区域 ★★★ -->
+                        <!-- 这里的 ID 必须和 JS 里对应，不要改 ID，class 可以随便改 -->
+                        <div id="api-preset-container" class="preset-row">
+                            <select id="preset-select" class="setting-input" style="flex:1;">
+                                <option value="">-- 选择 API 预设 --</option>
+                            </select>
+                            <div class="preset-btn-group">
+                                <button id="save-preset-btn" type="button" class="icon-btn">保存</button>
+                                <button id="del-preset-btn" type="button" class="icon-btn danger">删除</button>
+                            </div>
+                        </div>
+                        <!-- ★★★ 结束 ★★★ -->
+
                         <!-- API 地址 -->
                         <div class="main-option api-input-card">
                             <label class="api-label">API 地址，不加v1/chat/completions</label>
@@ -238,7 +251,7 @@
                             <label for="custom-model-select" class="api-label2">模型</label>
 
                             <div class="model-row">
-                                <div class="model-row">
+                                <div class="model-row" style="flex:1">
                                     <input type="text" id="custom-model-select" list="model-options" class="model-select" placeholder="手动输入或点击拉取...">
                                     <datalist id="model-options"></datalist>
                                 </div>
