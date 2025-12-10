@@ -607,6 +607,7 @@ const CloudSync = {
 
         this.showStatus('正在拉取恢复...');
         try {
+            // 1. 获取数据的逻辑保持不变
             const res = await fetch(`https://api.github.com/gists/${gistId}`, { 
                 headers: { Authorization: `token ${token}` }
             });
@@ -623,26 +624,70 @@ const CloudSync = {
             }
 
             const cleaned = content.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/g, '');
-            const backupData = JSON.parse(cleaned);
+            
+            // 2. 解析数据
+            let backupData;
+            try {
+                backupData = JSON.parse(cleaned);
+            } catch (e) {
+                throw new Error('备份文件 JSON 格式损坏');
+            }
 
             if (backupData && backupData.data) {
-                // --- 恢复时的关键步骤：解密 Token ---
-                // 同样假设结构是 backupData.data.settings.GIST_TOKEN
+                // --- 预判大小 ---
+                const jsonStr = JSON.stringify(backupData.data);
+                const estimatedSize = jsonStr.length * 2; // 估算内存占用
+                console.log(`预计恢复占用: ${(estimatedSize/1024/1024).toFixed(2)} MB`);
+                
+                // 如果大于 4.8MB，提前给个警告（不阻止，但让用户心里有数）
+                if (estimatedSize > 4.8 * 1024 * 1024) {
+                    alert(`⚠️ 警告：\n数据量极大(${(estimatedSize/1024/1024).toFixed(2)}MB)，接近手机极限。\n如果恢复失败，请在电脑端精简聊天记录。`);
+                }
+
+                // --- Token 解密逻辑 (保持不变) ---
                 if (backupData.data.settings && backupData.data.settings.GIST_TOKEN) {
                     const maskedToken = backupData.data.settings.GIST_TOKEN;
                     const realToken = this._unmaskToken(maskedToken);
                     backupData.data.settings.GIST_TOKEN = realToken;
-                    
-                    console.log("Token 已从备份中恢复并解密");
                 }
-                // ------------------------------------
 
-                Storage.importFromBackup(backupData.data);
-                this.showStatus('恢复成功！3秒后自动刷新页面');
-                setTimeout(() => location.reload(), 3000);
+                // ==========================================
+                // 3. 核心修改：先清空，再恢复
+                // ==========================================
+                
+                // 临时保存当前的 ID (Token 在上面已经解密在 backupData 里了，所以不用怕丢)
+                const currentGistId = localStorage.getItem(CONFIG.GIST_ID_KEY);
+
+                try {
+                    console.log('执行核弹级操作：清空本地存储...');
+                    localStorage.clear(); // <--- 这里！腾出所有空间
+
+                    // 恢复 ID (因为 clear 把 ID 也没了，虽然 import 可能会覆盖，但以防万一)
+                    if (currentGistId) localStorage.setItem(CONFIG.GIST_ID_KEY, currentGistId);
+
+                    // 写入数据
+                    Storage.importFromBackup(backupData.data);
+                    
+                    this.showStatus('恢复成功！3秒后自动刷新页面');
+                    setTimeout(() => location.reload(), 3000);
+
+                } catch (storageError) {
+                    // 如果清空了还是存不下，那就是真的存不下了
+                    console.error(storageError);
+                    if (storageError.name === 'QuotaExceededError' || storageError.message.includes('quota')) {
+                        alert('❌ 致命错误：\n即便清空了旧数据，新数据依然超过了手机浏览器 5MB 的限制。\n\n当前状态：本地数据已清空。\n\n请务必在电脑端删除部分长对话后重新备份。');
+                    } else {
+                        alert('❌ 恢复出错：' + storageError.message);
+                    }
+                }
+                // ==========================================
             }
         } catch (e) {
             this.showStatus('恢复出错: ' + e.message, true);
+            // 只有非存储类的错误才弹这个窗
+            if (!e.message.includes('quota')) {
+                alert('恢复过程出错:\n' + e.message);
+            }
         }
     }
 };
