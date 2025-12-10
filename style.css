@@ -98,7 +98,7 @@ body {
     flex-grow: 1;
     /* 调整内边距，使其文字垂直居中看起来像 input */
     padding: 6px 16px; 
-    border: 1px solid #ccc;
+    border: 1px solid #b5b5b5;
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.3);
 
@@ -123,13 +123,13 @@ body {
 
 #task-input:focus {
     outline: none;
-    border-color: rgba(255, 255, 255, 0.9);
+    border: 2px solid #b5b5b5;
     background: rgba(255, 255, 255, 0.3) !important;
 }
 
 #send-button {
     padding: 5px 12px;
-    border:1px solid rgba(255, 255, 255, 0.8);
+    border:1px solid rgba(182, 182, 182, 0.8);
     background: rgba(251, 251, 251, 0.2);
     color: rgba(255, 255, 255, 0.8);
     border-radius: 8px;
@@ -140,7 +140,7 @@ body {
 
 #reroll-footer-btn {
     padding: 5px 12px;
-    border:1px solid rgba(255, 255, 255, 0.8);
+    border:1px solid rgba(182, 182, 182, 0.8);
     cursor: pointer;
     border-radius: 8px;
     font-size: 1em;
@@ -376,19 +376,13 @@ body {
     background: none;
     border: none;
     font-size: 24px;
-    color: var(--primary-btn-color); /* 用你的主题色 */
+    color: #ffffff; /* 用你的主题色 */
     cursor: pointer;
     padding: 0 10px;
     height: 100%; /* 增加点击区域 */
     display: flex;
     align-items: center;
 }
-/* 因为你的header有padding-top(刘海屏)，所以上面的 top:50% 可能不准。
-   我们改为用 bottom定位，或者依赖 flex 布局。
-   为了不破坏你原本的布局，我们用绝对定位微调：
-*/
-.header-icon-btn.left { left: 10px; bottom: 0px; top: auto; transform: none; }
-.header-icon-btn.right { right: 10px; bottom: 5px; top: auto; transform: none; }
 
 /* 2. 全新设计的“清空”按钮样式 */
 .header-icon-btn.right {
@@ -419,11 +413,11 @@ body {
     font-size: 16px;  /* 字体必须比盒子小，icon 才会居中且不拥挤 */
     line-height: 1;   /* 消除文字默认行高，防止垂直偏移 */
     font-weight: 300; /*稍微细一点点更像现代App */
-    color: #818181;
+    color: #dedede;
     
     /* --- 外观样式 --- */
-    border: 1px solid #71717181;
-    background: rgba(236, 236, 236, 0.568);
+    border: 1px solid #ffffff81;
+    background: rgba(236, 236, 236, 0.2);
     
     /* --- 5. iOS 专用修复 (防止苹果手机加默认按钮样式) --- */
     -webkit-appearance: none;
@@ -459,11 +453,11 @@ body {
     font-size: 16px;  /* 字体必须比盒子小，icon 才会居中且不拥挤 */
     line-height: 1;   /* 消除文字默认行高，防止垂直偏移 */
     font-weight: 300; /*稍微细一点点更像现代App */
-    color: #818181;
+    color: #dedede;
     
     /* --- 外观样式 --- */
-    border: 1px solid #71717181;
-    background: rgba(236, 236, 236, 0.568);
+    border: 1px solid #ffffff81;
+    background: rgba(236, 236, 236, 0.2);
     
     /* --- 5. iOS 专用修复 (防止苹果手机加默认按钮样式) --- */
     -webkit-appearance: none;
@@ -486,12 +480,12 @@ body {
     height: 88vh;
     max-height: 820px;
     margin: auto;              /* 上下左右自动居中 */
-    background: rgba(255, 255, 255, 0.72);     /* 亮色壁纸推荐 0.72 */
+    background: rgba(52, 52, 52, 0.72);     /* 亮色壁纸推荐 0.72 */
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-radius: 15px;
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(115, 115, 115, 0.5);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -520,7 +514,7 @@ body {
     display: flex;
     align-items: center;
     padding: 12px 10px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     transition: background 0.2s ease;
     cursor: pointer;
 }
@@ -568,14 +562,14 @@ body {
 .contact-info h3 {
     margin: 0 0 5px 0;
     font-size: 16.5px;
-    color: #222;
+    color: #ffffffd8;
     font-weight: 600;
 }
 
 .contact-info p {
     margin: 0;
     font-size: 13.5px;
-    color: #777;
+    color: #cdcdcdc8;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
