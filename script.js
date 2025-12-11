@@ -50,15 +50,113 @@ const STATE = {
 };
 
 // =========================================
-// 2. STORAGE SERVICE (本地持久化)
+// 1.5. DB UTILS (IndexedDB 简易封装)
+// =========================================
+const DB = {
+    dbName: 'TeleWindyDB',
+    storeName: 'store',
+    version: 1,
+    
+    open() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.version);
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(this.storeName)) {
+                    db.createObjectStore(this.storeName);
+                }
+            };
+            request.onsuccess = (e) => resolve(e.target.result);
+            request.onerror = (e) => reject(e.target.error);
+        });
+    },
+
+    async get(key) {
+        const db = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(this.storeName, 'readonly');
+            const store = tx.objectStore(this.storeName);
+            const req = store.get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    },
+
+    async set(key, value) {
+        const db = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(this.storeName, 'readwrite');
+            const store = tx.objectStore(this.storeName);
+            const req = store.put(value, key);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+        });
+    },
+
+    async remove(key) {
+        const db = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(this.storeName, 'readwrite');
+            const store = tx.objectStore(this.storeName);
+            const req = store.delete(key);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+        });
+    },
+    
+    async clear() {
+        const db = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(this.storeName, 'readwrite');
+            const store = tx.objectStore(this.storeName);
+            const req = store.clear();
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+        });
+    },
+
+    // 导出所有数据用于备份
+    async exportAll() {
+        const db = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(this.storeName, 'readonly');
+            const store = tx.objectStore(this.storeName);
+            const req = store.getAllKeys();
+            
+            req.onsuccess = async () => {
+                const keys = req.result;
+                const data = {};
+                for (const key of keys) {
+                    data[key] = await this.get(key);
+                }
+                resolve(data);
+            };
+            req.onerror = () => reject(req.error);
+        });
+    }
+};
+// =========================================
+// 2. STORAGE SERVICE (本地持久化 - IndexedDB 版)
 // =========================================
 const Storage = {
-    load() {
-        // 1. 加载设置
-        const settingsRaw = localStorage.getItem(CONFIG.SETTINGS_KEY);
-        let loadedSettings = settingsRaw ? JSON.parse(settingsRaw) : {};
+    // 初始化/加载数据
+    async load() {
+        // ------------------------------------------------
+        // 1. 加载设置 (Settings)
+        // ------------------------------------------------
+        // 优先从 IDB 读取
+        let loadedSettings = await DB.get(CONFIG.SETTINGS_KEY);
 
-        // 兼容旧版 Theme
+        // [数据迁移]: 如果 IDB 为空，尝试从 LocalStorage 读取旧数据
+        if (!loadedSettings) {
+            const lsSettings = localStorage.getItem(CONFIG.SETTINGS_KEY);
+            if (lsSettings) {
+                try { loadedSettings = JSON.parse(lsSettings); } catch (e) {}
+            }
+        }
+        loadedSettings = loadedSettings || {};
+
+        // 兼容旧版 Theme (检查 LocalStorage，因为这是历史遗留位置)
         const legacyTheme = localStorage.getItem('appTheme');
         if (legacyTheme) {
             loadedSettings.THEME = legacyTheme;
@@ -70,18 +168,32 @@ const Storage = {
             STATE.settings.API_PRESETS = [];
         }
 
-        // 兼容旧头像壁纸
-        if (!settingsRaw) {
+        // 兼容旧头像壁纸 (同样检查 LocalStorage)
+        // 注意：一旦保存过一次新版，这些旧数据其实就不需要了，但为了安全保留检查
+        if (Object.keys(loadedSettings).length === 0) {
             const oldUserAvatar = localStorage.getItem('fs_user_avatar');
             const oldWallpaper = localStorage.getItem('fs_wallpaper');
             if (oldUserAvatar) STATE.settings.USER_AVATAR = oldUserAvatar;
             if (oldWallpaper) STATE.settings.WALLPAPER = oldWallpaper;
         }
 
-        // 2. 加载联系人
-        const contactsRaw = localStorage.getItem(CONFIG.STORAGE_KEY);
-        if (contactsRaw) {
-            STATE.contacts = JSON.parse(contactsRaw);
+        // ------------------------------------------------
+        // 2. 加载联系人 (Contacts)
+        // ------------------------------------------------
+        let contactsData = await DB.get(CONFIG.STORAGE_KEY);
+        
+        // [数据迁移]: IDB 无数据，尝试读取 LS
+        if (!contactsData) {
+            const lsContacts = localStorage.getItem(CONFIG.STORAGE_KEY);
+            if (lsContacts) {
+                try { contactsData = JSON.parse(lsContacts); } catch (e) {}
+            }
+        }
+
+        if (Array.isArray(contactsData)) {
+            STATE.contacts = contactsData;
+        } else {
+            STATE.contacts = [];
         }
 
         // 兜底默认联系人
@@ -95,14 +207,23 @@ const Storage = {
             });
         }
 
-        // 3. ★★★ 加载世界书 (带数据迁移逻辑)
-        // 尝试加载新版数据
-        const wiRawV2 = localStorage.getItem(CONFIG.WORLD_INFO_KEY);
-        
-        if (wiRawV2) {
-            STATE.worldInfoBooks = JSON.parse(wiRawV2);
+        // ------------------------------------------------
+        // 3. ★★★ 加载世界书 (World Info)
+        // ------------------------------------------------
+        let wiData = await DB.get(CONFIG.WORLD_INFO_KEY);
+
+        // [数据迁移]: IDB 无数据，尝试读取 LS 的 V2 数据
+        if (!wiData) {
+            const lsWiV2 = localStorage.getItem(CONFIG.WORLD_INFO_KEY);
+            if (lsWiV2) {
+                try { wiData = JSON.parse(lsWiV2); } catch (e) {}
+            }
+        }
+
+        if (wiData) {
+            STATE.worldInfoBooks = wiData;
         } else {
-            // 如果没有新版数据，检查是否有旧版数据 (v1)
+            // [旧版迁移]: 检查 LS 中的 V1 数据 (散乱条目)
             const wiRawV1 = localStorage.getItem('teleWindy_world_info_v1');
             STATE.worldInfoBooks = [];
             
@@ -110,18 +231,16 @@ const Storage = {
                 try {
                     const oldEntries = JSON.parse(wiRawV1);
                     if (Array.isArray(oldEntries) && oldEntries.length > 0) {
-                        // 迁移：将旧的散乱条目打包成一本“默认书”
-                        console.log("Detecting old WI format, migrating...");
+                        console.log("Detecting old WI format in LS, migrating to DB...");
                         const defaultBook = {
                             id: 'book_default_' + Date.now(),
                             name: '默认世界书 (旧数据迁移)',
-                            characterId: '', // 默认全局
+                            characterId: '', 
                             entries: oldEntries
                         };
                         STATE.worldInfoBooks.push(defaultBook);
-                        // 保存新版
-                        this.saveWorldInfo();
-                        // (可选) 删除旧版 key，或者保留作为备份
+                        // 立即保存到 IDB 以完成迁移
+                        await this.saveWorldInfo();
                     }
                 } catch (e) {
                     console.error("Migration failed", e);
@@ -129,7 +248,7 @@ const Storage = {
             }
         }
 
-        // 确保至少有一本书，方便用户操作
+        // 确保至少有一本书
         if (STATE.worldInfoBooks.length === 0) {
             STATE.worldInfoBooks.push({
                 id: 'book_' + Date.now(),
@@ -141,63 +260,90 @@ const Storage = {
         
         // 默认选中第一本
         STATE.currentBookId = STATE.worldInfoBooks[0].id;
+        
+        console.log('Storage loaded via IndexedDB.');
     },
 
-    saveContacts() {
-        localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(STATE.contacts));
+    // 保存联系人
+    async saveContacts() {
+        // IndexedDB 可以直接存对象，不需要 JSON.stringify
+        await DB.set(CONFIG.STORAGE_KEY, STATE.contacts);
     },
 
-    saveSettings() {
-        localStorage.setItem(CONFIG.SETTINGS_KEY, JSON.stringify(STATE.settings));
+    // 保存设置
+    async saveSettings() {
+        await DB.set(CONFIG.SETTINGS_KEY, STATE.settings);
     },
 
-    // ★★★ 新增：保存世界书
-    saveWorldInfo() {
-        localStorage.setItem(CONFIG.WORLD_INFO_KEY, JSON.stringify(STATE.worldInfoBooks));
+    // 保存世界书
+    async saveWorldInfo() {
+        await DB.set(CONFIG.WORLD_INFO_KEY, STATE.worldInfoBooks);
     },
     
-    // 导出备份逻辑
-    exportAllForBackup() {
-        const data = {};
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            const value = localStorage.getItem(key);
+    // 导出备份逻辑 (改为从 DB 获取)
+    async exportAllForBackup() {
+        // 1. 获取 DB 中所有数据
+        const data = await DB.exportAll(); // 使用 1.5 中定义的 exportAll
+
+        // 2. 特殊处理：Token 加密 (为了安全)
+        if (data[CONFIG.SETTINGS_KEY]) {
+            // 注意：从 DB 拿出来的是对象，不是字符串
+            let settings = data[CONFIG.SETTINGS_KEY]; 
             
-            // Token 加密保护
-            if (key === CONFIG.SETTINGS_KEY) {
-                try {
-                    const settings = JSON.parse(value);
-                    if (settings.GIST_TOKEN && !settings.GIST_TOKEN.startsWith('ENC_')) {
-                        const safeSettings = { ...settings };
-                        safeSettings.GIST_TOKEN = 'ENC_' + btoa(safeSettings.GIST_TOKEN);
-                        data[key] = JSON.stringify(safeSettings);
-                    } else {
-                        data[key] = value;
-                    }
-                } catch (e) { data[key] = value; }
-            } else {
-                data[key] = value;
+            // 为了不修改原始对象引用，我们浅拷贝一份
+            const safeSettings = { ...settings };
+
+            if (safeSettings.GIST_TOKEN && !safeSettings.GIST_TOKEN.startsWith('ENC_')) {
+                safeSettings.GIST_TOKEN = 'ENC_' + btoa(safeSettings.GIST_TOKEN);
+                // 替换掉原数据中的设置对象
+                data[CONFIG.SETTINGS_KEY] = safeSettings;
             }
         }
-        return data;
+        
+        // 3. (可选) 导出时将对象转为 JSON 字符串，方便保存为文件
+        // 如果你的 import 逻辑 期望的是 value 为字符串，这里需要 stringify
+        // 通常为了保持原来的行为一致性，我们在这里把对象转回字符串给下载文件用
+        const exportData = {};
+        for (const [key, val] of Object.entries(data)) {
+            exportData[key] = (typeof val === 'object') ? JSON.stringify(val) : val;
+        }
+
+        return exportData;
     },
 
     // 导入备份逻辑
-    importFromBackup(data) {
-        localStorage.clear();
-        Object.keys(data).forEach(key => {
+    async importFromBackup(data) {
+        // 1. 清空当前数据库
+        await DB.clear();
+        
+        // 2. 遍历导入
+        const promises = Object.keys(data).map(async (key) => {
             let value = data[key];
-            if (key === CONFIG.SETTINGS_KEY) {
-                try {
-                    const settings = JSON.parse(value);
-                    if (settings.GIST_TOKEN && settings.GIST_TOKEN.startsWith('ENC_')) {
-                        settings.GIST_TOKEN = atob(settings.GIST_TOKEN.replace('ENC_', ''));
-                        value = JSON.stringify(settings);
-                    }
-                } catch (e) { console.error('Token decrypt failed', e); }
+            
+            // 尝试解析 JSON 字符串回对象 (因为 export 时我们转成了字符串)
+            try {
+                if (typeof value === 'string') {
+                    value = JSON.parse(value);
+                }
+            } catch (e) {
+                // 如果不是 JSON，保持原样
             }
-            localStorage.setItem(key, value);
+
+            // 解密 Token
+            if (key === CONFIG.SETTINGS_KEY && value && typeof value === 'object') {
+                if (value.GIST_TOKEN && value.GIST_TOKEN.startsWith('ENC_')) {
+                    try {
+                        value.GIST_TOKEN = atob(value.GIST_TOKEN.replace('ENC_', ''));
+                    } catch (e) { console.error('Token decrypt failed', e); }
+                }
+            }
+            
+            // 写入 DB
+            await DB.set(key, value);
         });
+
+        await Promise.all(promises);
+        console.log('Import finished.');
     }
 };
 
@@ -488,8 +634,8 @@ const CloudSync = {
     // ---------------------------------------
 
     // 辅助：准备上传的数据
-    _preparePayload() {
-        const originalData = Storage.exportAllForBackup();
+    async _preparePayload() {
+        const originalData = await Storage.exportAllForBackup();
         const dataToUpload = JSON.parse(JSON.stringify(originalData));
 
         // 如果设置里存了 Token/密码，先混淆它，防止明文泄露
@@ -574,7 +720,7 @@ const CloudSync = {
     },
 
     // --- 逻辑补充：安全恢复 (防内存溢出) ---
-    _safeRestore(data) {
+    async _safeRestore(data) {
         // 1. 解密配置里的 Token
         if (data.settings && data.settings.GIST_TOKEN) {
             data.settings.GIST_TOKEN = this._unmaskToken(data.settings.GIST_TOKEN);
@@ -587,7 +733,7 @@ const CloudSync = {
 
         try {
             console.log('执行清空策略...');
-            localStorage.clear(); // <--- 核弹级操作：腾出空间
+            // localStorage.clear(); // 不再需要清空 LocalStorage (除非你想删配置)
 
             // 3. 恢复关键设置 (否则刷新页面后就忘了连哪里了)
             if(savedMode) localStorage.setItem('SYNC_MODE', savedMode);
@@ -595,7 +741,7 @@ const CloudSync = {
             if(savedGistId) localStorage.setItem(CONFIG.GIST_ID_KEY, savedGistId);
 
             // 4. 写入数据
-            Storage.importFromBackup(data);
+            await Storage.importFromBackup(data);
             
             this.showStatus('恢复成功！3秒后刷新');
             setTimeout(() => location.reload(), 3000);
@@ -623,7 +769,7 @@ const CloudSync = {
         localStorage.setItem('SYNC_CUSTOM_URL', url);
         this.showStatus('正在上传到私有云...');
 
-        const payload = this._preparePayload(); // 使用混淆过的数据
+        const payload = await this._preparePayload(); // 使用混淆过的数据
 
         try {
             const res = await fetch(url, {
@@ -656,7 +802,7 @@ const CloudSync = {
         const gistId = this.els.gistIdInput.value.trim();
         this.showStatus('正在连接 GitHub...');
 
-        const contentData = this._preparePayload(); // 使用混淆过的数据
+        const contentData = await this._preparePayload(); // 使用混淆过的数据
         const payload = {
             description: "TeleWindy Backup", 
             files: { "telewindy-backup.json": { content: JSON.stringify(contentData) } }
@@ -762,9 +908,9 @@ const UI = {
         }
     },
 
-    toggleTheme(newTheme) {
+    async toggleTheme(newTheme) {
         STATE.settings.THEME = newTheme;
-        Storage.saveSettings();
+        await Storage.saveSettings();
         this.applyAppearance();
     },
 
@@ -1031,10 +1177,25 @@ const UI = {
 // 7. APP CONTROLLER (业务逻辑)
 // =========================================
 const App = {
-    init() {
-        Storage.load();
+    // 1. 初始化入口
+    async init() {
+        // [关键点 1] 加上 await，程序会在这里暂停，直到数据库加载完毕
+        await Storage.load();
+        
+        // [关键点 2] 初始化界面元素（绑定 DOM 节点）
         UI.init();
+        
+        // [关键点 3] 绑定点击事件
         this.bindEvents();
+        
+        // [关键点 4] ★★★ 新增：数据加载好了，必须手动让 UI 渲染出联系人列表
+        // 假设你的 UI 对象里有一个叫 renderContacts 或 renderSidebar 的方法用来画列表
+        // 如果你的 UI.init() 里已经包含渲染逻辑，这行也可以省略，但显式调用更保险
+        if (typeof UI.renderContacts === 'function') {
+            UI.renderContacts();
+        }
+        
+        console.log("App initialized, contacts loaded:", STATE.contacts.length);
     },
 
     enterChat(id) {
@@ -1093,7 +1254,7 @@ const App = {
             else UI.els.input.focus(); 
         }        
 
-        Storage.saveContacts();
+        await Storage.saveContacts();
         UI.setLoading(true);
 
         const recentHistory = contact.history
@@ -1133,7 +1294,7 @@ const App = {
             const aiText = await API.chat(messagesToSend, STATE.settings);
             const aiTimestamp = formatTimestamp();
             contact.history.push({ role: 'assistant', content: aiText, timestamp: aiTimestamp });
-            Storage.saveContacts();
+            await Storage.saveContacts();
             UI.setLoading(false);
             await UI.playWaterfall(aiText, contact.avatar, aiTimestamp)
         } catch (error) {
@@ -1178,11 +1339,11 @@ const App = {
     },
 
     // 绑定当前书的角色
-    bindCurrentBookToChar(charId) {
+    async bindCurrentBookToChar(charId) {
         const book = STATE.worldInfoBooks.find(b => b.id === STATE.currentBookId);
         if (book) {
             book.characterId = charId;
-            Storage.saveWorldInfo();
+            await Storage.saveWorldInfo();
             // 不需刷新列表，因为内容没变
         }
     },
@@ -1203,7 +1364,7 @@ const App = {
         UI.renderWorldInfoList(); // 刷新高亮
     },
 
-    saveWorldInfoEntry() {
+    async saveWorldInfoEntry() {
         const book = STATE.worldInfoBooks.find(b => b.id === STATE.currentBookId);
         if (!book) return alert("请先新建或选择一本世界书");
 
@@ -1240,13 +1401,13 @@ const App = {
             book.entries.push(entry);
         }
 
-        Storage.saveWorldInfo();
+        await Storage.saveWorldInfo();
         UI.renderWorldInfoList();
         this.clearWorldInfoEditor();
         this.loadWorldInfoEntry(entry.uid);
     },
 
-    deleteWorldInfoEntry() {
+    async deleteWorldInfoEntry() {
         const book = STATE.worldInfoBooks.find(b => b.id === STATE.currentBookId);
         if (!book) return;
 
@@ -1254,7 +1415,7 @@ const App = {
         if (!uid) return;
         if (confirm('确定删除此条目吗？')) {
             book.entries = book.entries.filter(e => e.uid !== uid);
-            Storage.saveWorldInfo();
+            await Storage.saveWorldInfo();
             this.clearWorldInfoEditor();
             UI.renderWorldInfoList();
         }
@@ -1269,7 +1430,7 @@ const App = {
     },
 
     // ★★★ 大分类（书）的操作 ★★★
-    createNewBook() {
+    async createNewBook() {
         const name = prompt("请输入新世界书的名称：", "新世界书");
         if (name) {
             const newBook = {
@@ -1280,24 +1441,24 @@ const App = {
             };
             STATE.worldInfoBooks.push(newBook);
             STATE.currentBookId = newBook.id;
-            Storage.saveWorldInfo();
+            await Storage.saveWorldInfo();
             UI.renderBookSelect();
             UI.renderWorldInfoList();
         }
     },
 
-    renameCurrentBook() {
+    async renameCurrentBook() {
         const book = STATE.worldInfoBooks.find(b => b.id === STATE.currentBookId);
         if (!book) return;
         const newName = prompt("重命名世界书：", book.name);
         if (newName) {
             book.name = newName;
-            Storage.saveWorldInfo();
+            await Storage.saveWorldInfo();
             UI.renderBookSelect();
         }
     },
 
-    deleteCurrentBook() {
+    async deleteCurrentBook() {
         if (STATE.worldInfoBooks.length <= 1) {
             return alert("至少保留一本世界书");
         }
@@ -1307,7 +1468,7 @@ const App = {
         if (confirm(`确定要彻底删除整本《${book.name}》吗？\n里面的所有条目都会消失，不可恢复。`)) {
             STATE.worldInfoBooks = STATE.worldInfoBooks.filter(b => b.id !== STATE.currentBookId);
             STATE.currentBookId = STATE.worldInfoBooks[0].id; // 切换到第一本
-            Storage.saveWorldInfo();
+            await Storage.saveWorldInfo();
             UI.renderBookSelect();
             UI.renderWorldInfoList();
         }
@@ -1327,31 +1488,35 @@ const App = {
         URL.revokeObjectURL(url);
     },
 
-    handleImportWorldInfo(file) {
+    async handleImportWorldInfo(file) {
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                // 现在 importFromST 返回一个 Book 对象
-                const newBook = WorldInfoEngine.importFromST(e.target.result, file.name);
-                STATE.worldInfoBooks.push(newBook);
-                STATE.currentBookId = newBook.id; // 自动切换到新导入的书
-                
-                Storage.saveWorldInfo();
-                UI.renderBookSelect();
-                UI.renderWorldInfoList();
-                
-                alert(`成功导入《${newBook.name}》，包含 ${newBook.entries.length} 个条目！`);
-            } catch (err) {
-                alert(err.message);
-            }
-        };
-        reader.readAsText(file);
+
+        try {
+            // 1. 直接等待文件读取为文本，不用写 reader.onload 了
+            const content = await file.text(); 
+            
+            // 2. 剩下的逻辑像流水账一样写下来
+            const newBook = WorldInfoEngine.importFromST(content, file.name);
+            STATE.worldInfoBooks.push(newBook);
+            STATE.currentBookId = newBook.id; 
+            
+            // 3. 等待数据库保存
+            await Storage.saveWorldInfo();
+            
+            // 4. 刷新界面
+            UI.renderBookSelect();
+            UI.renderWorldInfoList();
+            
+            alert(`成功导入《${newBook.name}》，包含 ${newBook.entries.length} 个条目！`);
+            
+        } catch (err) {
+            alert(err.message);
+        }
     },
 
     // ----------------------
 
-    handleSavePreset() {
+    async handleSavePreset() {
         const name = prompt("请为当前配置输入一个预设名称 (如: Gemini Pro)");
         if (!name) return;
 
@@ -1365,7 +1530,7 @@ const App = {
         if(!preset.url || !preset.key) return alert("请先填好 API 地址和密钥！");
 
         STATE.settings.API_PRESETS.push(preset);
-        Storage.saveSettings();
+        await Storage.saveSettings();
         UI.renderPresetMenu(); 
     },
 
@@ -1381,19 +1546,19 @@ const App = {
         }
     },
 
-    handleDeletePreset() {
+    async handleDeletePreset() {
         const select = document.getElementById('preset-select');
         const index = select.value;
         if (index === "") return alert("请先选择一个预设");
         
         if (confirm(`确定删除 "${STATE.settings.API_PRESETS[index].name}" 吗？`)) {
             STATE.settings.API_PRESETS.splice(index, 1);
-            Storage.saveSettings();
+            await Storage.saveSettings();
             UI.renderPresetMenu();
         }
     },
 
-    saveSettingsFromUI() {
+    async saveSettingsFromUI() {
         let rawUrl = UI.els.settingUrl.value.trim().replace(/\/+$/, '');
         if (!rawUrl.includes('anthropic') && !rawUrl.includes('googleapis')) {
             if (rawUrl.endsWith('/chat/completion')) rawUrl += 's'; 
@@ -1416,7 +1581,7 @@ const App = {
             s.WALLPAPER = 'wallpaper.jpg';
         }
 
-        Storage.saveSettings();
+        await Storage.saveSettings();
         UI.applyAppearance(); 
         UI.els.mainModal.classList.add('hidden');
         alert(`设置已保存！`);
@@ -1534,20 +1699,20 @@ const App = {
         if(modalSave) modalSave.onclick = () => { this.saveContactFromModal(); document.getElementById('modal-overlay').classList.add('hidden'); };
         
         const modalDel = document.getElementById('modal-delete');
-        if(modalDel) modalDel.onclick = () => {
+        if(modalDel) modalDel.onclick = async () => {
              if (confirm('删除角色？')) {
                  STATE.contacts = STATE.contacts.filter(c => c.id !== this.editingId);
-                 Storage.saveContacts();
+                 await Storage.saveContacts();
                  document.getElementById('modal-overlay').classList.add('hidden');
                  if(STATE.currentContactId === this.editingId) document.getElementById('back-btn').click();
                  else UI.renderContacts();
              }
         };
         const modalClear = document.getElementById('modal-clear-history');
-        if(modalClear) modalClear.onclick = () => {
+        if(modalClear) modalClear.onclick = async () => {
             if(confirm('清空聊天记录？')) {
                 const c = STATE.contacts.find(x => x.id === this.editingId);
-                if(c) { c.history = []; Storage.saveContacts(); }
+                if(c) { c.history = []; await Storage.saveContacts(); }
                 document.getElementById('modal-overlay').classList.add('hidden');
                 if(STATE.currentContactId === this.editingId) UI.renderChatHistory(c);
             }
@@ -1555,9 +1720,9 @@ const App = {
 
         // 头像上传
         this.bindImageUpload('edit-avatar-file', 'edit-avatar-preview', 'edit-avatar'); 
-        this.bindImageUpload('user-avatar-file', 'user-avatar-preview', null, (base64) => {
+        this.bindImageUpload('user-avatar-file', 'user-avatar-preview', null, async (base64) => {
             STATE.settings.USER_AVATAR = base64;
-            Storage.saveSettings();
+            await Storage.saveSettings();
             if(STATE.currentContactId) {
                 const c = STATE.contacts.find(x => x.id === STATE.currentContactId);
                 if(c) UI.renderChatHistory(c);
@@ -1670,7 +1835,7 @@ const App = {
         }
     },
 
-    saveContactFromModal() {
+    async saveContactFromModal() {
         const name = document.getElementById('edit-name').value.trim() || '未命名';
         let avatar = document.getElementById('edit-avatar').value.trim();
         const prompt = document.getElementById('edit-prompt').value.trim();
@@ -1683,7 +1848,7 @@ const App = {
         } else {
             STATE.contacts.push({ id: Date.now().toString(), name, avatar, prompt, history: [] });
         }
-        Storage.saveContacts();
+        await Storage.saveContacts();
         UI.renderContacts();
         if (STATE.currentContactId === this.editingId) {
             document.getElementById('chat-title').innerText = name;
