@@ -2,6 +2,7 @@
  * TeleWindy Core Logic - Refactored with World Book (Categories)
  * 结构说明：
  * 1. CONFIG & STATE: 全局配置常量与运行时状态
+ * 1.5. DB UTILS (IndexedDB 简易封装)
  * 2. STORAGE SERVICE: 负责数据的持久化 (LocalStorage)
  * 3. WORLD INFO ENGINE: ★★★ 重构：基于“书”的世界书核心逻辑
  * 4. API SERVICE: 负责与 LLM 通信及模型拉取
