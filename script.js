@@ -1133,7 +1133,7 @@ const UI = {
         }
     },
 
-    // ★★★ 渲染世界书：条目列表（修复显示版）★★★
+    // ★★★ 渲染世界书：条目列表（纯逻辑版）★★★
     renderWorldInfoList() {
         const container = this.els.wiList;
         if (!container) return;
@@ -1142,44 +1142,32 @@ const UI = {
         const currentBook = STATE.worldInfoBooks.find(b => b.id === STATE.currentBookId);
         if (!currentBook) return;
 
-        currentBook.entries.forEach((entry, index) => {
+        const currentEditingUid = document.getElementById('wi-edit-uid') 
+            ? document.getElementById('wi-edit-uid').value 
+            : null;
+
+        currentBook.entries.forEach((entry) => {
             const item = document.createElement('div');
-            item.style.padding = '8px';
-            item.style.borderBottom = '1px solid #eee';
-            item.style.cursor = 'pointer';
-            item.style.fontSize = '14px';
-            item.style.whiteSpace = 'nowrap';      // 防止文字换行太丑
-            item.style.overflow = 'hidden';        // 超出隐藏
-            item.style.textOverflow = 'ellipsis';  // 显示省略号
-            
-            // 高亮当前选中的条目
-            const currentEditingUid = document.getElementById('wi-edit-uid') ? document.getElementById('wi-edit-uid').value : null;
+            item.classList.add('wi-list-item');
+
+            // 高亮当前编辑中的条目
             if (entry.uid === currentEditingUid) {
-                item.style.backgroundColor = 'rgba(0,0,0,0.05)';
-                item.style.fontWeight = 'bold';
+                item.classList.add('wi-list-item-active');
             }
 
             // ★★★ 核心显示逻辑 ★★★
-            // 1. 优先显示 comment (名字)
-            // 2. 没有名字显示第一个 Key
-            // 3. 还没有就显示 "未命名"
-            let displayName = entry.comment;
-            
-            if (!displayName) {
-                if (Array.isArray(entry.keys) && entry.keys.length > 0) {
-                    displayName = entry.keys[0];
-                } else {
-                    displayName = '未命名条目';
-                }
-            }
+            let displayName = entry.comment || 
+                (Array.isArray(entry.keys) && entry.keys.length > 0 ? entry.keys[0] : '未命名条目');
 
             const typeEmoji = entry.constant ? '📌' : '🔎';
-            item.innerText = `${typeEmoji} ${displayName}`;
-            
+            item.textContent = `${typeEmoji} ${displayName}`;
+
             item.onclick = () => App.loadWorldInfoEntry(entry.uid);
             container.appendChild(item);
         });
     },
+
+
 
     // ★★★ 初始化世界书 Tab 的数据 ★★★
     initWorldInfoTab() {

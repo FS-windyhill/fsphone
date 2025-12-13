@@ -638,9 +638,8 @@ body {
 #modal-save { background: var(--primary-btn-color); color: var(--primary-btn-text); border: 0.7px solid var(--primary-btn-text);}
 
 .modal-danger-zone {
-    margin-top: 25px;
+    margin-top: 0px;
     padding-top: 15px;
-    border-top: 1px dashed var(--btn-border-color);
     display: flex; 
     flex-direction: column; 
     gap: 20px;
@@ -909,10 +908,9 @@ button#del-preset-btn.icon-btn.danger{
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: rgba(255, 80, 80, 0.1);
-    color: #d32f2f;
+    background: rgba(255, 33, 33, 0.5);
+    color: #ffcaca;
     border: 1px solid rgba(255, 80, 80, 0.9);
-
 }
 
 .preset-btn-group {
@@ -1312,7 +1310,6 @@ div#group-custom-url.input-group{
     background: rgba(255, 255, 255, 0.65); /* 比弹窗稍微透一点，因为在底层 */
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
     border-radius: 16px;
     padding: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
@@ -1389,15 +1386,42 @@ div#group-custom-url.input-group{
     padding-right: 4px; /* 给滚动条留位置 */
 }
 
+
+/* 世界书条目列表容器（建议给 this.els.wiList 加个类，便于控制） */
+
+
+/* 单个条目样式 */
+.wi-list-item {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color 0.2s ease; /* 可选：hover 更平滑 */
+}
+
+.wi-list-item:hover {
+    background-color: rgba(0, 0, 0, 0.03); /* 悬停轻微高亮 */
+}
+
+/* 当前选中/编辑中的条目高亮 */
+.wi-list-item-active {
+    background-color: rgba(0, 0, 0, 0.05);
+    font-weight: bold;
+}
+
+
 /* 列表里的每一项 (JS动态生成的div建议加个class，或者用通用选择器) */
 #wi-list-container > div {
-    padding: 10px 12px;
-    background: rgba(255,255,255,0.5);
-    border: 1px solid transparent;
+    padding: 12px 12px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(50, 50, 50, 0.2);
     border-radius: 10px;
     cursor: pointer;
     font-size: 13px;
-    color: #333;
+    color: #2a2a2a;
     transition: all 0.2s;
 }
 
@@ -1405,12 +1429,6 @@ div#group-custom-url.input-group{
     background: rgba(230, 230, 230, 0.9);
 }
 
-#wi-list-container > div.active {
-    background: var(--primary-btn-color, #e0e0e0); /* 使用你的主色变量 */
-    color: var(--primary-btn-text);
-    font-weight: 600;
-    border-color: rgba(0,0,0,0.1);
-}
 
 /* 右侧编辑区 */
 .wi-editor {
@@ -1675,9 +1693,14 @@ div#group-custom-url.input-group{
 
     /* 列表项稍微加大，方便手指点击 */
     #wi-list-container > div {
-        padding: 12px 14px;
-        font-size: 14px;
+        padding: 17px 16px;
+        font-size: 13px;
+        text-align: left;
+        display: flex;
+        align-items: center;
     }
+
+    
 
     /* 5. 右侧编辑区：在下方铺开 */
     .wi-editor {
@@ -1783,7 +1806,7 @@ body.dark-mode .setting-input,
 body.dark-mode #gist-id-input,
 body.dark-mode textarea {
     background: #444;
-    border-color: #555;
+    border-color: #9f9f9f;
     color: #fff;
 }
 
@@ -2098,10 +2121,22 @@ body.dark-mode .danger-btn {
     padding: 5px; border-radius: 8px; font-size: 13px; cursor: pointer; width: 100%;
 }
 body.dark-mode .danger-btn.outline {
-    background: rgba(255, 255, 255, 0.3);
-    color: #ffffff;
+    background: rgba(255, 33, 33, 0.5);
+    color: #ffcaca;
     border: 1px solid rgba(255, 80, 80, 0.9);
 }
+
+/* =========== 夜间世界书 ============== */
+body.dark-mode #wi-list-container > div {
+    padding: 12px 12px;
+    background: rgba(151, 151, 151, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #ffffff;
+    transition: all 0.2s;
+} 
 
 
 /* ============================================== */
@@ -2367,14 +2402,16 @@ body.dark-mode .edit-buttons .primary {
 /* 上下文日志按钮区域 */
 .log-section {
     display: none;
-    margin-top: 15px;
+    margin: 15px 0px 0px 0px;
     padding-top: 10px;
-    border-top: 1px dashed rgba(255, 255, 255, 0.2);
+    border-top: 1px dashed var(--btn-border-color);
+    border-bottom: 1px dashed var(--btn-border-color);
 }
 
 .log-show-btn {
     width: 100%;
     text-align: center;
+    margin-bottom: 15px;
 }
 
 /* 日志弹窗整体 */
