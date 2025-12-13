@@ -1,89 +1,107 @@
-/**
- * TeleWindy Core Logic - 完整模块目录（详细版）
+/*
+ * TeleWindy 项目代码目录结构（树状注释版）
  * 
- * 1. CONFIG & STATE          —— 全局配置常量 + 运行时状态
- *    ├─ CONFIG                 : 所有常量、默认值、STORAGE_KEY、SYSTEM_PROMPT 等
- *    └─ STATE                  : 运行时全局状态（contacts、worldInfoBooks、currentContactId、currentBookId、settings、isTyping）
- * 
- * 1.5. DB UTILS (IndexedDB 封装)
- *    ├─ open()                 : 打开/创建 IndexedDB 数据库
- *    ├─ get(key)               : 读取一条数据
- *    ├─ set(key, value)        : 写入/更新一条数据
- *    ├─ remove(key)            : 删除一条数据
- *    ├─ clear()                : 清空整个数据库
- *    └─ exportAll()            : 导出数据库中所有键值对（用于备份）
- * 
- * 2. STORAGE SERVICE         —— 数据持久化核心（基于 IndexedDB + 兼容旧 LocalStorage 迁移）
- *    ├─ load()                 : 初始化时加载所有数据（settings、contacts、worldInfoBooks）+ 自动迁移旧版数据
- *    ├─ saveContacts()         : 保存联系人列表
- *    ├─ saveSettings()         : 保存全局设置
- *    ├─ saveWorldInfo()        : 保存所有世界书
- *    ├─ exportAllForBackup()   : 导出完整备份（Token 会加密处理）
- *    └─ importFromBackup(data) : 导入备份（自动清库 → 解密 Token → 写入）
- * 
- * 3. WORLD INFO ENGINE       —— ★★★ 世界书（World Book）核心逻辑（大分类 + 条目）
- *    ├─ importFromST(jsonString, fileName) : 导入 SillyTavern 格式的世界书 → 生成 Book 对象
- *    ├─ exportToST(book)       : 导出当前书为标准 SillyTavern JSON
- *    └─ scan(userText, history, currentContactId, currentContactName)
- *        → 核心触发逻辑：只扫描最近两条对话，判断全局书/绑定书 → 检查 constant 或 key 是否命中 → 返回注入的 world info 文本
- * 
- * 4. API SERVICE             —— 与大模型通信的核心封装（兼容 OpenAI / Claude / Gemini）
- *    ├─ getProvider(url)       : 根据 URL 判断是哪家供应商
- *    ├─ fetchModels(url, key)  : 拉取模型列表
- *    └─ chat(messages, settings) : 统一发送聊天请求（自动适配三种格式）
- * 
- * 5. CLOUD SYNC              —— 云端备份/恢复（Gist + 自定义服务器 双模式）
- *    ├─ init()                 : 初始化 UI 与历史选择
- *    ├─ toggleMode()           : 切换 Gist / 自定义服务器 模式
- *    ├─ findBackup()           : 【Gist 专属】自动搜索用户的所有 Gist，找到 TeleWindy 备份
- *    ├─ updateBackup()         : 主入口：根据当前模式执行上传
- *    ├─ restoreBackup()        : 主入口：根据当前模式执行恢复
- *    ├─ _uploadToCustom() / _fetchFromCustom() : 自定义服务器上传/下载
- *    ├─ _uploadToGist() / _fetchFromGist()     : GitHub Gist 上传/下载
- *    ├─ _preparePayload()      : 上传前数据混淆（Token 加密防泄露）
- *    ├─ _safeRestore()         : 安全恢复（自动解密 Token + 保留同步设置）
- *    └─ 其他辅助：_maskToken / _unmaskToken / showStatus / getAuth 等
- * 
- * 6. UI RENDERER             —— 所有 DOM 操作与界面渲染
- *    ├─ init()                 : 初始化外观 + 渲染联系人 + 云同步初始化
- *    ├─ applyAppearance()      : 应用壁纸 + 主题
- *    ├─ toggleTheme()          : 切换明暗模式并保存
- *    ├─ switchView()           : 联系人列表 ↔ 聊天窗口 切换
- *    ├─ renderContacts()       : 渲染左侧联系人列表
- *    ├─ renderBookSelect()     : 渲染世界书下拉框（大分类）
- *    ├─ renderWorldInfoList()  : 渲染当前书的条目列表 + 高亮当前编辑项
- *    ├─ initWorldInfoTab()     : 世界书标签页首次打开时的完整初始化
- *    ├─ renderChatHistory()    : 渲染聊天记录（含时间戳清理）
- *    ├─ appendMessageBubble()  : 添加单条消息气泡（自动处理头像、时间）
- *    ├─ playWaterfall()        : AI 回复逐段渐现动画
- *    ├─ setLoading()           : “正在输入…” 状态
- *    ├─ removeLatestAiBubbles(): 删除最后几条 AI 消息（用于重滚）
- *    ├─ updateRerollState()    : 更新“重滚”按钮可用性
- *    └─ renderPresetMenu()     : 渲染 API 预设下拉菜单
- * 
- * 7. APP CONTROLLER          —— 核心业务逻辑 + 所有事件绑定
- *    ├─ init()                 : 程序入口（load → UI.init → 绑定事件）
- *    ├─ enterChat(id)          : 进入指定联系人聊天
- *    ├─ handleSend(isReroll)   : 发送消息主逻辑（含 reroll、重滚）
- *    ├─ openSettings()         : 打开主设置弹窗并填充当前值 + 初始化世界书 Tab
- *    ├─ 世界书相关系列函数：
- *        ├─ switchWorldInfoBook()          : 切换当前编辑的书
- *        ├─ bindCurrentBookToChar()        : 把当前书绑定到某个角色（或全局）
- *        ├─ loadWorldInfoEntry() / saveWorldInfoEntry() / deleteWorldInfoEntry()
- *        ├─ clearWorldInfoEditor()
- *        ├─ createNewBook() / renameCurrentBook() / deleteCurrentBook()
- *        ├─ exportCurrentBook() / handleImportWorldInfo()
- *    ├─ API 预设相关：handleSavePreset / handleLoadPreset / handleDeletePreset
- *    ├─ saveSettingsFromUI()   : 从设置弹窗保存所有配置
- *    ├─ fetchModelsForUI()     : 拉取模型列表按钮回调
- *    ├─ openEditModal() / saveContactFromModal() : 角色的新建/编辑
- *    ├─ bindEvents()           : 一次性绑定页面上几乎所有按钮、输入框事件（超级长的一个函数）
- *    └─ 其他工具：readFile / bindImageUpload 等
- * 
- * 8. UTILS & GLOBAL FUNCTIONS
- *    ├─ formatTimestamp()      : 生成 [Dec.12 14:23] 格式时间戳
- *    ├─ window.exportData()    : 全局导出备份按钮调用
- *    └─ window.importData()    : 全局导入备份按钮调用（含空间检测、超限警告、自动刷新）
+ * ├─ 1. CONFIG & STATE (配置与状态)
+ * │   ├─ CONFIG                // 全局常量配置（键名、默认值、系统提示等）
+ * │   └─ STATE                 // 运行时状态（联系人、当前书、设置等）
+ * │
+ * ├─ 1.5. DB UTILS (IndexedDB 简易封装)
+ * │   ├─ open()                // 打开数据库
+ * │   ├─ get(key)              // 读取单条数据
+ * │   ├─ set(key, value)       // 写入单条数据
+ * │   ├─ remove(key)           // 删除单条数据
+ * │   ├─ clear()               // 清空整个数据库
+ * │   └─ exportAll()           // 导出所有数据（使用游标遍历）
+ * │
+ * ├─ 2. STORAGE SERVICE (本地持久化 - IndexedDB 版)
+ * │   ├─ load()                // 初始化加载（设置、联系人、世界书，含数据迁移）
+ * │   ├─ saveContacts()        // 保存联系人
+ * │   ├─ saveSettings()        // 保存设置
+ * │   ├─ saveWorldInfo()       // 保存世界书
+ * │   ├─ exportAllForBackup()  // 导出备份（含 Token 加密）
+ * │   └─ importFromBackup(data)// 导入备份（含 Token 解密）
+ * │
+ * ├─ 3. WORLD INFO ENGINE (世界书引擎)
+ * │   ├─ importFromST(jsonString, fileName) // 从 SillyTavern 格式导入书
+ * │   ├─ exportToST(book)      // 导出为 SillyTavern 兼容格式
+ * │   └─ scan(userText, history, currentContactId, currentContactName)
+ * │                            // 扫描触发世界书条目并返回注入提示
+ * │
+ * ├─ 4. API SERVICE (LLM 通信)
+ * │   ├─ getProvider(url)      // 判断 API 提供商（openai/claude/gemini）
+ * │   ├─ fetchModels(url, key) // 拉取模型列表
+ * │   └─ chat(messages, settings) // 发送聊天请求（兼容多种接口）
+ * │
+ * ├─ 5. CLOUD SYNC (云同步 - Gist 与自定义服务器混合版)
+ * │   ├─ init()                // 初始化 UI 与恢复上次模式
+ * │   ├─ toggleMode()          // 切换同步方式（Gist / 自定义）
+ * │   ├─ showStatus(msg, isError) // 显示同步状态
+ * │   ├─ getAuth()             // 获取 Token/密码（带兼容旧加密）
+ * │   ├─ _maskToken() / _unmaskToken() // Token 混淆/反混淆（防泄露）
+ * │   ├─ _preparePayload()     // 准备上传数据（含 Token 混淆）
+ * │   ├─ updateBackup()        // 主入口：根据模式选择上传
+ * │   ├─ findBackup()          // 自动查找 GitHub 上已有备份
+ * │   ├─ restoreBackup()       // 恢复备份
+ * │   ├─ _safeRestore(data)    // 安全恢复（防空间不足）
+ * │   ├─ _uploadToCustom()     // 自定义服务器上传
+ * │   ├─ _fetchFromCustom()    // 自定义服务器下载
+ * │   ├─ _uploadToGist()       // Gist 上传（创建或更新）
+ * │   └─ _fetchFromGist()      // Gist 下载
+ * │
+ * ├─ 6. UI RENDERER (DOM 操作与渲染)
+ * │   ├─ init()                // 初始化外观与联系人列表
+ * │   ├─ applyAppearance()     // 应用主题与壁纸
+ * │   ├─ toggleTheme(newTheme) // 切换日夜模式
+ * │   ├─ switchView(viewName)  // 切换列表/聊天视图
+ * │   ├─ renderContacts()      // 渲染联系人列表
+ * │   ├─ renderBookSelect()    // 渲染世界书下拉框
+ * │   ├─ updateCurrentBookSettingsUI() // 更新当前书绑定角色 UI
+ * │   ├─ renderWorldInfoList() // 渲染世界书条目列表（显示 comment）
+ * │   ├─ initWorldInfoTab()    // 初始化世界书 Tab
+ * │   ├─ createSingleBubble(...) // 创建单个消息气泡
+ * │   ├─ renderChatHistory(contact) // 渲染完整聊天记录（带消息分组）
+ * │   ├─ appendMessageBubble(...) // 追加单条气泡（支持分组）
+ * │   ├─ removeLatestAiBubbles() // 删除最近 AI 消息（用于 reroll）
+ * │   ├─ scrollToBottom()      // 滚动到底部
+ * │   ├─ setLoading(isLoading) // 设置“正在输入”状态
+ * │   ├─ updateRerollState(contact) // 更新 reroll 按钮状态
+ * │   ├─ playWaterfall(fullText, avatar, timestamp) // 瀑布流显示 AI 回复
+ * │   └─ renderPresetMenu()    // 渲染 API 预设下拉菜单
+ * │
+ * ├─ 7. APP CONTROLLER (主业务逻辑)
+ * │   ├─ init()                // 应用启动入口（加载数据 → 初始化 UI → 绑定事件）
+ * │   ├─ enterChat(id)         // 进入聊天界面
+ * │   ├─ handleSend(isReroll)  // 发送消息 / 重滚
+ * │   ├─ openSettings()        // 打开主设置弹窗
+ * │   ├─ switchWorldInfoBook(bookId) // 切换当前世界书
+ * │   ├─ bindCurrentBookToChar(charId) // 绑定当前书到角色
+ * │   ├─ loadWorldInfoEntry(uid) // 加载条目到编辑区
+ * │   ├─ saveWorldInfoEntry()  // 保存世界书条目
+ * │   ├─ deleteWorldInfoEntry() // 删除条目
+ * │   ├─ clearWorldInfoEditor() // 清空编辑区
+ * │   ├─ createNewBook()       // 新建世界书
+ * │   ├─ renameCurrentBook()   // 重命名当前书
+ * │   ├─ deleteCurrentBook()   // 删除当前书
+ * │   ├─ exportCurrentBook()   // 导出当前书
+ * │   ├─ handleImportWorldInfo(file) // 导入世界书
+ * │   ├─ handleSavePreset()    // 保存 API 预设
+ * │   ├─ handleLoadPreset(index) // 加载 API 预设
+ * │   ├─ handleDeletePreset()  // 删除 API 预设
+ * │   ├─ saveSettingsFromUI()  // 从设置弹窗保存配置
+ * │   ├─ handleMessageAction(action) // 长按菜单：复制/编辑/删除消息
+ * │   ├─ showMessageContextMenu(...) // 显示长按上下文菜单
+ * │   ├─ hideMessageContextMenu() // 隐藏上下文菜单
+ * │   ├─ bindEvents()          // 绑定所有 DOM 事件（按钮、输入、长按等）
+ * │   ├─ readFile(file)        // 读取文件为 base64
+ * │   ├─ fetchModelsForUI()    // UI 中拉取模型列表
+ * │   ├─ bindImageUpload(...)  // 绑定图片上传逻辑
+ * │   ├─ openEditModal(id)     // 打开角色编辑弹窗
+ * │   └─ saveContactFromModal() // 保存角色信息
+ * │
+ * └─ 8. UTILS & EXPORTS (工具函数与全局导出)
+ *     ├─ formatTimestamp()     // 格式化时间戳
+ *     ├─ window.exportData()   // 全局导出备份函数
+ *     └─ window.importData(input) // 全局导入备份函数
  * 
  * 启动入口：window.onload = () => App.init();
  */
@@ -1863,60 +1881,42 @@ const App = {
 
 
     showMessageContextMenu(msgIndex, rect) {
-        STATE.selectedMessageIndex = msgIndex;  // 记录当前长按的是哪条消息
+        STATE.selectedMessageIndex = msgIndex;
 
-        // 如果菜单还没创建，就创建一次（只创建一次）
-        if (!this.els.msgContextMenu) {
-            const menu = document.createElement('div');
-            menu.id = 'msg-context-menu';
-            menu.innerHTML = `
-                <div class="menu-backdrop"></div>
-                <div class="menu-panel">
-                    <button data-action="edit">编辑</button>
-                    <button data-action="copy">复制</button>
-                    <button data-action="delete">删除</button>
-                    <hr>
-                    <button data-action="cancel">取消</button>
-                </div>
-            `;
-            document.body.appendChild(menu);
-            this.els.msgContextMenu = menu;
+        const menu = document.getElementById('msg-context-menu');
 
-            // 用事件委托，只绑定一次（推荐方式，更稳）
+        // 事件绑定（保持不变）
+        if (!menu.dataset.initialized) {
+            menu.dataset.initialized = 'true';
             menu.addEventListener('click', e => {
                 const btn = e.target.closest('button');
-                if (!btn) return;  // 点击的不是按钮，直接忽略
-
+                if (!btn) return;
                 const action = btn.dataset.action;
-
                 if (action === 'cancel') {
-                    menu.style.display = 'none';
+                    this.hideMessageContextMenu();
                     return;
                 }
-
-                // 执行编辑/复制/删除（它会自己从 STATE.selectedMessageIndex 读取索引）
                 this.handleMessageAction(action);
-                menu.style.display = 'none';  // 操作完就隐藏菜单
+                this.hideMessageContextMenu();
             });
-
-            // 点击背景遮罩也关闭菜单
             menu.querySelector('.menu-backdrop').addEventListener('click', () => {
-                menu.style.display = 'none';
+                this.hideMessageContextMenu();
             });
         }
 
-        // 显示菜单（每次长按都会执行到这里）
-        this.els.msgContextMenu.style.display = 'flex';
+        
 
-        // 可选：把菜单定位到长按的位置附近（提升体验）
-        // 如果你想居中显示，可以不写下面这几行
-        // if (rect) {
-        //     const panel = this.els.msgContextMenu.querySelector('.menu-panel');
-        //     panel.style.position = 'fixed';
-        //     panel.style.left = '50%';
-        //     panel.style.top = '50%';
-        //     panel.style.transform = 'translate(-50%, -50%)';
-        // }
+        // ★★★★★ 关键三行：显示 + 可点 + 最顶级 ★★★★★
+        menu.style.display = 'flex';
+
+        // 可选：如果你想更保险，可以再加背景（测试用）
+        // menu.querySelector('.menu-backdrop').style.background = 'rgba(0,0,0,0.6)';
+    },
+
+    // 隐藏方法
+    hideMessageContextMenu() {
+        const menu = document.getElementById('msg-context-menu');
+        if (menu) menu.style.display = 'none';
     },
 
     bindEvents() {

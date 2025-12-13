@@ -2242,5 +2242,162 @@ body.dark-mode .danger-btn.outline {
     border-top: 1px solid #eee;
 }
 
+/* ========== 消息长按上下文菜单整体 ========== */
+.msg-context-menu {
+    position: fixed;
+    inset: 0;
+    display: none;                    /* 默认隐藏 */
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
 
+.msg-context-menu.visible {
+    display: flex;
+}
 
+/* 背景遮罩：半透明毛玻璃 */
+.menu-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);       /* 更强的模糊，高端感 */
+}
+
+.msg-context-menu.show {              /* 我们用 .show 类来显示 */
+    display: flex !important;         /* !important 打败可能的 hidden */
+}
+
+/* 菜单面板：增加宽度 + 圆角 + 阴影 */
+.menu-panel {
+    background: var(--panel-bg, #ffffff);   /* 浅色模式默认白 */
+    border-radius: 18px;                    /* 更大圆角，更软萌 */
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    padding: 10px 0;
+    min-width: 220px;                       /* ★ 宽度从180→220，更宽松舒服 */
+    max-width: 280px;                       /* 防止手机上太宽 */
+    overflow: hidden;
+    animation: menuPop 0.22s ease-out;
+}
+
+/* 按钮文字颜色与样式 */
+.menu-panel button {
+    width: 100%;
+    padding: 14px 24px;                     /* 上下左右间距更大，手感更好 */
+    text-align: left;
+    background: none;
+    border: none;
+    font-size: 16px;                        /* 文字稍大一点 */
+    font-weight: 500;
+    color: var(--text-primary, #333333);    /* 默认文字颜色 */
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.menu-panel button:hover {
+    background: var(--hover-bg, rgba(0, 0, 0, 0.08));
+}
+
+/* 特别强调“删除”按钮：红色警示 */
+.menu-panel button[data-action="delete"] {
+    color: #e74c3c;                          /* 鲜艳红，提醒危险 */
+    font-weight: 600;
+}
+
+.menu-panel button[data-action="delete"]:hover {
+    background: rgba(231, 76, 60, 0.12) !important;
+}
+
+/* 分隔线 */
+.menu-panel hr {
+    margin: 10px 0;
+    border: none;
+    border-top: 1px solid var(--divider, rgba(0, 0, 0, 0.12));
+}
+
+/* 弹出动画 */
+@keyframes menuPop {
+    from {
+        transform: scale(0.88);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.show { display: flex; }
+
+/* ★★★★★ 专杀 backdrop-filter 干扰的菜单 ★★★★★ */
+#msg-context-menu {
+    position: fixed !important;   /* 强制 fixed，摆脱任何父上下文干扰 */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 20000 !important;    /* 比 .modal-overlay 的 10000 高一倍！ */
+    pointer-events: none;         /* 默认不拦截点击 */
+}
+
+#msg-context-menu * {
+    pointer-events: auto;         /* 菜单内容能点 */
+}
+
+.menu-backdrop {
+    background: rgba(0, 0, 0, 0.5) !important;  /* 强加半透明背景，确保看得见 */
+    backdrop-filter: blur(8px);                 /* 你喜欢毛玻璃就加 */
+}
+
+.menu-panel {
+    background: rgba(255, 255, 255, 0.9);       /* 白底半透明 */
+    border-radius: 18px;
+    padding: 16px 0;
+    min-width: 220px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+/* ★★★★★ 专治 backdrop-filter / transform 困住 fixed 的灵异菜单 ★★★★★ */
+#msg-context-menu {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 30000 !important;          /* 比 .modal-overlay 的 10000 高三倍！ */
+    isolation: isolate;                 /* ★ 关键！强制创建新 stacking context，逃离父级陷阱 */
+    transform: translateZ(0);           /* ★ 关键！强制 GPU 加速，创建新层，摆脱 backdrop-filter 干扰 */
+    pointer-events: none;               /* 默认不拦截点击 */
+    contain: layout style paint;        /* ★ 额外保险，优化性能并隔离上下文 */
+}
+
+#msg-context-menu * {
+    pointer-events: auto;               /* 菜单内容能点 */
+}
+
+/* 强加可见背景（防止透明看不见） */
+.menu-backdrop {
+    background: rgba(0, 0, 0, 0.55) !important;
+    backdrop-filter: blur(12px);
+}
+
+/* 美化面板 */
+.menu-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 18px;
+    padding: 12px 0;
+    min-width: 220px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4);
+    animation: menuPop 0.22s ease-out;
+}
+
+.menu-panel button {
+    padding: 14px 28px;
+    font-size: 16px;
+    text-align: left;
+}
+
+.menu-panel button[data-action="delete"] {
+    color: #e74c3c;
+}
