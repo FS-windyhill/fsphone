@@ -2211,9 +2211,16 @@ body.dark-mode #wi-list-container > div {
 }
 
 .message-bubble {
-    -webkit-user-select: text;
-    user-select: text;
+    /* 禁止用户选择文本 (核心) */
+    -webkit-user-select: none;  /* Safari, Chrome */
+    -moz-user-select: none;     /* Firefox */
+    -ms-user-select: none;      /* IE/Edge */
+    user-select: none;          /* 标准语法 */
+
+    /* 禁止 iOS 长按时弹出菜单 (增强) */
+    -webkit-touch-callout: none; 
     transition: transform 0.2s ease, background 0.2s ease;
+    
 }
 
 .message-bubble:active {
