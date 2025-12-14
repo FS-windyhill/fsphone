@@ -1354,7 +1354,7 @@ const UI = {
         this.scrollToBottom();
         this.updateRerollState(contact);
     },
-    
+
 /* 1212 - Fixed */
     appendMessageBubble(text, sender, aiAvatarUrl, timestampRaw, historyIndex = null) {
         // 1. 安全检查：如果未传入 historyIndex，尝试自动获取
@@ -2220,15 +2220,17 @@ const App = {
             // 这样系统原本的长按选词、复制菜单、页面滚动都能正常工作
             
             longPressTimer = setTimeout(() => {
-                // ★★★ 关键修改 2：触发前再次检查是否有选中文本 ★★★
-                // 如果用户长按是为了选字（系统菜单会出现），我们就不弹编辑窗了，防止两个菜单重叠
-                if (window.getSelection().toString().length > 0) return;
+                e.preventDefault();
 
-                // 弹出你的自定义菜单
+                // 2. 再次检查是否有选中文本（双重保险）
+                if (window.getSelection().toString().length > 0) return;
+                
+                // 3. 弹出你的自定义菜单
                 App.showMessageContextMenu(msgIndex, bubble.getBoundingClientRect());
+
             }, LONG_PRESS_DURATION);
 
-        }, { passive: true }); // ★★★ 关键修改 3：passive: true 让滚动更丝滑 ★★★
+        }, { passive: false });
 
         // 2. 触摸移动 (解决滑动卡顿的核心)
         UI.els.chatMsgs.addEventListener('touchmove', e => {
