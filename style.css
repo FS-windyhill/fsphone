@@ -2242,7 +2242,7 @@ body.dark-mode #wi-list-container > div {
 
 .menu-panel {
     position: relative;               /* 改成 relative 或者 fixed 都行 */
-    background: rgba(255, 255, 255, 0.85);  /* 或者 #fff */
+    background: rgba(255, 255, 255, 0.9);  /* 或者 #fff */
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     min-width: 200px;
@@ -2343,7 +2343,7 @@ body.dark-mode #wi-list-container > div {
  /* =======================弹窗黑夜模式====================================*/
 body.dark-mode .menu-panel {
     position: relative;               /* 改成 relative 或者 fixed 都行 */
-    background: rgba(103, 103, 103, 0.85);  /* 或者 #fff */
+    background: rgba(103, 103, 103, 0.9);  /* 或者 #fff */
     border-radius: 12px;
     min-width: 200px;
     z-index: 2;                       /* 关键：面板在遮罩上面！ */
