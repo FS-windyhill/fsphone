@@ -579,7 +579,8 @@ body {
     background: rgba(0,0,0,0.4); /* 背景黑一点 */
     z-index: 10000;
     display: flex; align-items: center; justify-content: center;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 
@@ -717,8 +718,8 @@ body {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -744,8 +745,8 @@ body {
 /* ============= 毛玻璃面板（两个弹窗公用）============= */
 .modal.glass-panel {
     background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border-radius: 18px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
     width: 90%;
@@ -1203,7 +1204,8 @@ div#group-custom-url.input-group{
 .settings-sidebar {
     width: 50px;                /* 手机上固定宽度 */
     background: rgba(245,245,245,0.95);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     flex-direction: column;
     padding: 20px 0;
@@ -2044,7 +2046,8 @@ body.dark-mode .settings-content {
 body.dark-mode .settings-sidebar {
     width: 50px;
     background: rgba(31, 31, 31, 0.95);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     display: flex;
     flex-direction: column;
     padding: 20px 0;
@@ -2168,7 +2171,8 @@ body.dark-mode #wi-list-container > div {
         padding: 0;
         flex-direction: row;
         background: rgba(40, 40, 40, 0.95);
-        backdrop-filter: blur(12px);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
     }
 
     body.dark-mode .tab-item {
@@ -2289,6 +2293,7 @@ body.dark-mode #wi-list-container > div {
     inset: 0;
     background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(8px);       /* 更强的模糊，高端感 */
+    -webkit-backdrop-filter: blur(8px); 
 }
 
 /* ==========文字编辑=============== */
