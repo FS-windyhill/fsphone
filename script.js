@@ -1062,34 +1062,93 @@ const UI = {
         }
     },
 
+    // 【6. UI RENDERER】
     renderContacts() {
         if(!this.els.contactContainer) return;
-        this.els.contactContainer.innerHTML = '';
+        this.els.contactContainer.innerHTML = ''; // 清空列表
+
+        // 1. 获取 HTML 里的模板
+        const template = document.getElementById('tpl-contact-item');
+        if (!template) {
+            console.error("未找到模板: tpl-contact-item");
+            return;
+        }
+
         STATE.contacts.forEach(c => {
-            const item = document.createElement('div');
-            item.className = 'contact-item';
+            // 2. 克隆模板 (cloneNode(true) 表示深拷贝)
+            const clone = template.content.cloneNode(true);
+
+            // 3. 填充数据
             
-            let avatarHtml = `<div class="contact-avatar">${c.avatar || '🌼'}</div>`;
-            if (c.avatar.startsWith('data:') || c.avatar.startsWith('http')) {
-                avatarHtml = `<img src="${c.avatar}" class="contact-avatar" onerror="this.style.display='none'">`;
+            // --- A. 填充名字 ---
+            clone.querySelector('.contact-name').textContent = c.name;
+
+            // --- B. 处理头像 ---
+            const avatarWrapper = clone.querySelector('.avatar-wrapper');
+            // 简单判断：如果是 base64 或 http 开头，就是图片，否则是 emoji/文字
+            if (c.avatar && (c.avatar.startsWith('data:') || c.avatar.startsWith('http'))) {
+                const img = document.createElement('img');
+                img.src = c.avatar;
+                img.className = 'contact-avatar';
+                img.onerror = function() { this.style.display = 'none'; }; // 图片坏了就隐藏
+                avatarWrapper.appendChild(img);
+            } else {
+                const div = document.createElement('div');
+                div.className = 'contact-avatar';
+                div.textContent = c.avatar || '🌼'; // 默认头像
+                avatarWrapper.appendChild(div);
             }
 
-            let lastMsg = "暂无消息";
+            // --- C. 处理消息预览和红点逻辑 (原逻辑保持不变) ---
+            let previewText = "暂无消息";
+            let msgCount = 0;
+            let showRedDot = false;
+            
             const validMsgs = c.history.filter(m => m.role !== 'system');
             if (validMsgs.length > 0) {
-                const content = validMsgs[validMsgs.length - 1].content;
-                lastMsg = content.length > 30 ? content.slice(0, 30) + '…' : content;
+                const lastMsgObj = validMsgs[validMsgs.length - 1];
+                let content = lastMsgObj.content || '';
+                
+                // 正则去时间戳
+                content = content.replace(/^\[[A-Z][a-z]{2}\.\d{1,2}\s\d{2}:\d{2}\]\s/, '');
+                // 拆分段落
+                const chunks = content.split(/\n\s*\n/).filter(p => p.trim());
+
+                if (chunks.length > 0) {
+                    let lastChunk = chunks[chunks.length - 1];
+                    previewText = lastChunk.length > 30 ? lastChunk.slice(0, 30) + '…' : lastChunk;
+                    msgCount = chunks.length;
+                    
+                    // ★ 修改逻辑：
+                    // 必须同时满足两个条件：
+                    // 1. 最后一条是 AI 发的
+                    // 2. 角色身上有 "hasNewMsg" 标记
+                    if (lastMsgObj.role === 'assistant' && c.hasNewMsg === true) {
+                        showRedDot = true;
+                    }
+                }
             }
 
-            item.innerHTML = `
-                ${avatarHtml}
-                <div class="contact-info">
-                    <h3>${c.name}</h3>
-                    <p>${lastMsg}</p>
-                </div>
-            `;
-            item.onclick = () => App.enterChat(c.id);
-            this.els.contactContainer.appendChild(item);
+            // 填入预览文字
+            clone.querySelector('.contact-preview').textContent = previewText;
+
+            // --- D. 处理红点显示 ---
+            const badge = clone.querySelector('.badge-count');
+            if (showRedDot && msgCount > 0) {
+                badge.textContent = msgCount;
+                badge.style.display = 'block'; // 显示
+            } else {
+                badge.style.display = 'none'; // 隐藏
+            }
+
+            // --- E. 绑定点击事件 ---
+            // 注意：clone 是一个 DocumentFragment，不能直接加 onclick
+            // 我们需要给里面的 .contact-item 元素加事件
+            const itemDiv = clone.querySelector('.contact-item');
+            itemDiv.onclick = () => App.enterChat(c.id);
+
+            // 4. 将填好数据的克隆体加入页面
+            this.els.contactContainer.appendChild(clone);
         });
     },
 
@@ -1484,9 +1543,20 @@ const App = {
     enterChat(id) {
         const contact = STATE.contacts.find(c => c.id === id);
         if (!contact) return;
+        
         STATE.currentContactId = id;
         UI.switchView('chat');
+
+        // ★ 进入聊天，消除红点
+        if (contact.hasNewMsg) {
+            contact.hasNewMsg = false; 
+            Storage.saveContacts(); 
+        }
+
         UI.renderChatHistory(contact);
+        
+        // ★ 刷新列表，让界面上的红点立刻消失
+        UI.renderContacts(); 
     },
 
     async handleSend(isReroll = false) {
@@ -1591,7 +1661,23 @@ const App = {
             // 只要 playWaterfall 是在 push 之后调用的，且如果不传 index 它取最后一条，逻辑就是对的。
             contact.history.push({ role: 'assistant', content: aiText, timestamp: aiTimestamp });
             
+            // ================== 【修改开始】 ==================
+            
+            // ★ A. 红点逻辑：
+            // 如果当前显示的并不是这个角色的聊天窗口（说明用户趁AI思考时切走去聊别的了）
+            // 或者是为了保险起见，只要 ID 不对就标红
+            if (STATE.currentContactId !== contact.id) {
+                contact.hasNewMsg = true;
+            }
+
+            // 2. 保存数据
             await Storage.saveContacts();
+            
+            // ★ B. 刷新侧边栏：
+            // 这一步很重要！不仅是为了显示红点，还是为了更新列表里的“最后一条消息预览”
+            UI.renderContacts(); 
+
+            // ================== 【修改结束】 ==================
             UI.setLoading(false);
             
             // 确保 playWaterfall 能处理正确的 index (通常它处理最新的)
@@ -1953,36 +2039,45 @@ const App = {
 
         // 3. 执行动作
         if (action === 'edit') {
-            UI.showEditModal(msgData.content, (newText) => {
-                if (newText && newText !== msgData.content) {
-                    msgData.content = newText;
+            // ★ 修改点：智能分离时间戳
+            // 定义时间戳正则，跟你在 renderChatHistory 里用的一样
+            const timestampRegex = /^\[[A-Z][a-z]{2}\.\d{1,2}\s\d{2}:\d{2}\]\s/;
+            
+            let originalContent = msgData.content;
+            let timestampPart = ''; // 用于暂存时间戳头
+            let cleanContent = originalContent;
+
+            const match = originalContent.match(timestampRegex);
+            if (match) {
+                timestampPart = match[0]; // 比如 "[Dec.14 16:39] "
+                cleanContent = originalContent.replace(timestampRegex, ''); // 去掉时间戳
+            }
+
+            // 传入干净的文本给弹窗
+            UI.showEditModal(cleanContent, (newText) => {
+                // 如果文本有变化
+                if (newText && newText !== cleanContent) {
+                    // ★ 核心：保存时把原时间戳拼回去
+                    msgData.content = timestampPart + newText;
+                    
                     Storage.saveContacts(); 
                     UI.renderChatHistory(currentContact);
                 }
             });
         } 
-        
-        // ================== 修改了下面这两部分 ==================
-        
         else if (action === 'delete') {
-            // ★ 修改点1：添加 confirm 确认弹窗
-            // 只有用户点击“确定”，才会执行删除逻辑
             if (confirm("确定要删除这条消息吗？")) {
                 currentContact.history.splice(msgIndex, 1);
-                
                 Storage.saveContacts();
                 UI.renderChatHistory(currentContact);
-                
-                // 如果删除成功也想提示，可以解开下面这行注释：
-                // alert("删除成功");
             }
         }
         else if (action === 'copy') {
+            // 复制时是否要带时间戳？如果不带，也可以在这里做正则处理
+            // 这里暂且保持复制原始内容
             navigator.clipboard.writeText(msgData.content)
                 .then(() => {
-                    // ★ 修改点2：复制成功后弹出提示
                     alert("复制成功！"); 
-                    // 如果觉得 alert 太丑，也可以用你自己写的 UI.showToast("复制成功") 之类的
                 })
                 .catch(err => {
                     console.error("复制失败:", err);
@@ -1990,7 +2085,6 @@ const App = {
                 });
         }
     },
-
 
     hideMessageContextMenu() {
         if (this.els.msgContextMenu) {

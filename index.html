@@ -47,6 +47,30 @@
             </div>
         </div>
 
+
+        <!-- ================================================= -->
+        <!-- TEMPLATES (模板区，不在页面直接显示，供JS调用) -->
+        <!-- ================================================= -->
+        
+        <!-- 联系人列表项模板 -->
+        <template id="tpl-contact-item">
+            <div class="contact-item">
+                <div class="contact-main-content">
+                    <!-- 头像容器 -->
+                    <div class="avatar-wrapper"></div>
+                    
+                    <!-- 信息容器 -->
+                    <div class="contact-info">
+                        <h3 class="contact-name">角色名称</h3>
+                        <p class="contact-preview">消息预览...</p>
+                    </div>
+                </div>
+                
+                <!-- 红点 (默认隐藏) -->
+                <div class="badge-count" style="display: none;">0</div>
+            </div>
+        </template>
+
         <!-- ======================= -->
         <!-- 页面 2：聊天窗口 (隐藏) -->
         <!-- ======================= -->
