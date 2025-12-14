@@ -627,7 +627,7 @@ const API = {
                 model: MODEL,
                 system: sysPrompts,
                 messages: [{ role: "user", content: lastUserMsg }],
-                max_tokens: 100000,
+                max_tokens: 60000,
                 temperature: 1.1
             });
         } else if (provider === 'gemini') {
@@ -635,7 +635,7 @@ const API = {
             options.body = JSON.stringify({
                 contents: [{ role: 'user', parts: [{ text: lastUserMsg }] }],
                 system_instruction: { parts: [{ text: sysPrompts }] },
-                generationConfig: { temperature: 1.1, maxOutputTokens: 100000 }
+                generationConfig: { temperature: 1.1, maxOutputTokens: 60000 }
             });
         } else {
             // OpenAI Standard (SiliconFlow, DeepSeek, etc.)
@@ -644,7 +644,7 @@ const API = {
                 model: MODEL,
                 messages: messages,
                 temperature: 1.1,
-                max_tokens: 100000
+                max_tokens: 60000
             });
         }
 
@@ -2632,4 +2632,5 @@ window.importData = (input) => {
     reader.readAsText(input.files[0]);
 };
 // 启动应用
+
 window.onload = () => App.init();
