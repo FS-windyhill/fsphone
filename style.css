@@ -2549,18 +2549,17 @@ body.dark-mode .edit-buttons .primary {
 
 /* 红点样式 */
 .badge-count {
-    background-color: #ff4d4f; /* 鲜艳的红色 */
+    background-color: #ff4d4ff0;
     color: white;
-    font-size: 12px;
-    height: 18px;
+    font-size: 11px;
+    height: 19px;
     min-width: 18px;
     line-height: 18px;
     text-align: center;
-    border-radius: 9px; /* 圆角 */
-    padding: 0 4px;
-    margin-left: 8px; /* 和文字保持距离 */
+    border-radius: 16px;
+    padding: 0 1px;
+    margin-left: 8px;
     font-weight: bold;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 
