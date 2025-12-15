@@ -216,6 +216,7 @@ body {
     height: 100%;
     border-radius: 50%;
     object-fit: cover;
+    box-shadow: 0 0px 3px rgba(0,0,0,0.2);
 }
 
 
@@ -257,6 +258,12 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* 2. 关键：这个类就是“开关” */
+/* 只有当 JS 添加了 .bubble-enter 这个类时，才会播放上面的 slideInUp 动画 */
+.message-wrapper.bubble-enter {
+    animation: slideInUp 0.3s ease-out forwards;
 }
 
 /* 
@@ -2563,7 +2570,36 @@ body.dark-mode .edit-buttons .primary {
 }
 
 
+/* 加载更多消息 */
+/* 加载更多按钮样式 */
+.load-more-btn {
+    text-align: center;
+    padding: 10px;
+    margin: 10px auto;
+    font-size: 12px;
+    color: #888;
+    cursor: pointer;
+    background-color: rgba(0, 0, 0, 0.03); /* 轻微背景 */
+    border-radius: 15px;
+    width: fit-content;
+    user-select: none;
+    transition: all 0.2s;
+}
 
+.load-more-btn:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+    color: #555;
+}
+
+/* 适配暗色模式（如果你有做暗色模式的话） */
+body.dark-theme .load-more-btn {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #aaa;
+}
+body.dark-theme .load-more-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
 
 
 

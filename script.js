@@ -1,115 +1,120 @@
-/*
- * =========================================
- * 树状代码目录 (TeleWindy 项目结构)
- * =========================================
+/**
+ * ================================================
+ * TeleWindy 代码结构树状目录（2025-12-15）
+ * ================================================
  *
  * 1. CONFIG & STATE (配置与状态)
  *    ├─ CONFIG 对象
- *    │   └─ SYSTEM_PROMPT (系统提示词)
- *    └─ STATE 对象 (运行时状态)
+ *    │   └─ SYSTEM_PROMPT
+ *    └─ STATE 对象
  *
  * 1.5. DB UTILS (IndexedDB 简易封装)
- *    ├─ open()          → 打开数据库
- *    ├─ get(key)        → 读取数据
- *    ├─ set(key, value) → 写入数据
- *    ├─ remove(key)     → 删除数据
- *    ├─ clear()         → 清空数据库
- *    └─ exportAll()     → 导出所有数据（使用游标）
+ *    ├─ open()
+ *    ├─ get(key)
+ *    ├─ set(key, value)
+ *    ├─ remove(key)
+ *    ├─ clear()
+ *    └─ exportAll()
  *
  * 2. STORAGE SERVICE (本地持久化 - IndexedDB 版)
- *    ├─ load()                  → 初始化加载所有数据（设置、联系人、世界书 + 数据迁移）
- *    ├─ saveContacts()          → 保存联系人
- *    ├─ saveSettings()          → 保存设置
- *    ├─ saveWorldInfo()         → 保存世界书
- *    ├─ exportAllForBackup()    → 导出备份（含 Token 加密）
- *    └─ importFromBackup(data)  → 导入备份（含 Token 解密）
+ *    ├─ load()
+ *    ├─ saveContacts()
+ *    ├─ saveSettings()
+ *    ├─ saveWorldInfo()
+ *    ├─ exportAllForBackup()
+ *    └─ importFromBackup(data)
  *
  * 3. WORLD INFO ENGINE (世界书引擎)
- *    ├─ importFromST(jsonString, fileName) → 从 SillyTavern 格式导入世界书
- *    ├─ exportToST(book)                   → 导出为 SillyTavern 格式
+ *    ├─ importFromST(jsonString, fileName)
+ *    ├─ exportToST(book)
  *    └─ scan(userText, history, currentContactId, currentContactName)
- *                                          → 扫描上下文并注入触发的内容
  *
- * 4. API SERVICE (LLM 通信)
- *    ├─ getProvider(url)      → 判断 API 提供商 (claude/gemini/openai)
- *    ├─ fetchModels(url, key) → 拉取可用模型列表
- *    ├─ estimateTokens(text)  → 估算 Token 数量（中英文分开计算）
- *    └─ chat(messages, settings) → 核心聊天请求（支持多种提供商 + 日志记录）
+ * 4. API SERVICE (LLM通信)
+ *    ├─ getProvider(url)
+ *    ├─ fetchModels(url, key)
+ *    ├─ estimateTokens(text)
+ *    └─ chat(messages, settings)
  *
- * 5. CLOUD SYNC (云同步 - Gist / 自定义服务器混合版)
- *    ├─ init()                  → 初始化 UI 与恢复状态
- *    ├─ toggleMode()            → 切换同步模式（Gist ↔ 自定义）
- *    ├─ showStatus(msg, isError)→ 显示同步状态
- *    ├─ getAuth()               → 安全获取 Token/密码
- *    ├─ _maskToken() / _unmaskToken() → Token 混淆/解混淆（防泄露）
- *    ├─ _preparePayload()       → 准备上传数据（含混淆）
- *    ├─ updateBackup()          → 主入口：根据模式上传
- *    ├─ findBackup()            → 自动查找 GitHub Gist 备份
- *    ├─ restoreBackup()         → 恢复备份
- *    ├─ _safeRestore(data)      → 安全恢复（防空间不足）
- *    ├─ _uploadToCustom()       → 自定义服务器上传
- *    ├─ _fetchFromCustom()      → 自定义服务器下载
- *    ├─ _uploadToGist()         → GitHub Gist 上传/更新
- *    └─ _fetchFromGist()        → GitHub Gist 下载
+ * 5. CLOUD SYNC (云同步 - Gist & 自定义服务器)
+ *    ├─ init()
+ *    ├─ toggleMode()
+ *    ├─ showStatus(msg, isError)
+ *    ├─ getAuth()
+ *    ├─ _maskToken(token)
+ *    ├─ _unmaskToken(maskedToken)
+ *    ├─ _preparePayload()
+ *    ├─ updateBackup()
+ *    ├─ findBackup()
+ *    ├─ restoreBackup()
+ *    ├─ _safeRestore(data)
+ *    ├─ _uploadToCustom()
+ *    ├─ _fetchFromCustom(password)
+ *    ├─ _uploadToGist()
+ *    └─ _fetchFromGist(token)
  *
- * 6. UI RENDERER (界面渲染与 DOM 操作)
- *    ├─ init()                       → 初始化外观与联系人列表
- *    ├─ applyAppearance()            → 应用主题与壁纸
- *    ├─ toggleTheme(newTheme)        → 切换日夜模式
- *    ├─ switchView(viewName)         → 切换列表 ↔ 聊天视图
- *    ├─ renderContacts()             → 渲染联系人侧边栏
- *    ├─ renderBookSelect()           → 渲染世界书下拉框
- *    ├─ updateCurrentBookSettingsUI()→ 更新当前书绑定角色 UI
- *    ├─ renderWorldInfoList()        → 渲染世界书条目列表
- *    ├─ initWorldInfoTab()           → 初始化世界书 Tab 页面
- *    ├─ renderChatHistory(contact)   → 渲染完整聊天记录
- *    ├─ createSingleBubble(...)      → 创建单个消息气泡
- *    ├─ appendMessageBubble(...)     → 追加消息气泡（支持分段）
- *    ├─ showEditModal(...)           → 显示消息编辑弹窗
- *    ├─ removeLatestAiBubbles()      → 删除最新 AI 消息组（用于重滚）
- *    ├─ scrollToBottom()             → 滚动到底部
- *    ├─ setLoading(isLoading)        → 设置“正在输入”状态
- *    ├─ updateRerollState(contact)   → 更新重滚按钮状态
- *    ├─ playWaterfall(fullText, ...) → 瀑布流逐段显示 AI 回复
- *    └─ renderPresetMenu()           → 渲染 API 预设下拉菜单
+ * 6. UI RENDERER (DOM 操作与渲染)
+ *    ├─ init()
+ *    ├─ applyAppearance()
+ *    ├─ toggleTheme(newTheme)
+ *    ├─ switchView(viewName)
+ *    ├─ renderContacts()
+ *    ├─ renderBookSelect()
+ *    ├─ updateCurrentBookSettingsUI()
+ *    ├─ renderWorldInfoList()
+ *    ├─ initWorldInfoTab()
+ *    ├─ createSingleBubble(...)
+ *    ├─ showEditModal(oldText, onConfirmCallback)
+ *    ├─ removeLatestAiBubbles()
+ *    ├─ renderChatHistory(contact)
+ *    ├─ appendMessageBubble(...)
+ *    ├─ scrollToBottom()
+ *    ├─ setLoading(isLoading)
+ *    ├─ updateRerollState(contact)
+ *    ├─ playWaterfall(fullText, avatar, timestamp)
+ *    └─ renderPresetMenu()
  *
- * 7. APP CONTROLLER (核心业务逻辑)
- *    ├─ init()                          → 应用启动入口（加载数据 → 初始化 UI → 绑定事件）
- *    ├─ enterChat(id)                   → 进入指定聊天
- *    ├─ handleSend(isReroll)            → 发送消息 / 重滚
- *    ├─ openSettings()                  → 打开主设置弹窗
- *    ├─ switchWorldInfoBook(bookId)     → 切换当前世界书
- *    ├─ bindCurrentBookToChar(charId)   → 绑定当前书到角色
- *    ├─ loadWorldInfoEntry(uid)         → 加载条目到编辑器
- *    ├─ saveWorldInfoEntry()            → 保存条目（含名称逻辑）
- *    ├─ deleteWorldInfoEntry()          → 删除条目
- *    ├─ clearWorldInfoEditor()          → 清空编辑器
- *    ├─ createNewBook()                 → 新建世界书
- *    ├─ renameCurrentBook()             → 重命名当前书
- *    ├─ deleteCurrentBook()             → 删除当前书
- *    ├─ exportCurrentBook()             → 导出当前书为 ST 格式
- *    ├─ handleImportWorldInfo(file)     → 导入 ST 世界书
- *    ├─ handleSavePreset()              → 保存 API 预设
- *    ├─ handleLoadPreset(index)         → 加载 API 预设
- *    ├─ handleDeletePreset()            → 删除 API 预设
- *    ├─ saveSettingsFromUI()            → 从设置界面保存
- *    ├─ handleMessageAction(action)     → 处理消息右键操作（编辑/删除/复制）
- *    ├─ showMessageContextMenu(...)     → 显示消息上下文菜单（含防误触）
- *    ├─ hideMessageContextMenu()        → 隐藏上下文菜单
- *    ├─ bindEvents()                    → 集中绑定所有 DOM 事件
- *    ├─ readFile(file)                  → 读取文件为 base64
- *    ├─ fetchModelsForUI()              → UI 中拉取模型列表
- *    ├─ bindImageUpload(...)            → 绑定图片上传逻辑
- *    ├─ openEditModal(id)               → 打开角色编辑弹窗
- *    └─ saveContactFromModal()          → 保存角色修改
+ * 7. APP CONTROLLER (业务逻辑主控)
+ *    ├─ init()
+ *    ├─ enterChat(id)
+ *    ├─ handleSend(isReroll)
+ *    ├─ openSettings()
+ *    ├─ switchWorldInfoBook(bookId)
+ *    ├─ bindCurrentBookToChar(charId)
+ *    ├─ loadWorldInfoEntry(uid)
+ *    ├─ saveWorldInfoEntry()
+ *    ├─ deleteWorldInfoEntry()
+ *    ├─ clearWorldInfoEditor()
+ *    ├─ createNewBook()
+ *    ├─ renameCurrentBook()
+ *    ├─ deleteCurrentBook()
+ *    ├─ exportCurrentBook()
+ *    ├─ handleImportWorldInfo(file)
+ *    ├─ handleSavePreset()
+ *    ├─ handleLoadPreset(index)
+ *    ├─ handleDeletePreset()
+ *    ├─ saveSettingsFromUI()
+ *    ├─ handleMessageAction(action)
+ *    ├─ hideMessageContextMenu()
+ *    ├─ showMessageContextMenu(msgIndex, rect)
+ *    ├─ bindEvents()
+ *    ├─ readFile(file)
+ *    ├─ fetchModelsForUI()
+ *    ├─ bindImageUpload(...)
+ *    ├─ openEditModal(id)
+ *    └─ saveContactFromModal()
  *
  * 8. UTILS & EXPORTS (工具函数与全局导出)
- *    ├─ formatTimestamp()               → 格式化时间戳
- *    ├─ window.exportData()             → 全局导出备份函数
- *    └─ window.importData(input)        → 全局导入备份函数
+ *    ├─ formatTimestamp()
+ *    ├─ window.exportData()
+ *    └─ window.importData(input)
  *
- * 启动：window.onload = () => App.init();
+ * 启动入口：window.onload = () => App.init();
+ * ================================================
  */
+
+
+
+
 
 // =========================================
 // 1. CONFIG & STATE (配置与状态)
@@ -119,6 +124,7 @@ const CONFIG = {
     STORAGE_KEY: 'teleWindy_char_data_v1',
     SETTINGS_KEY: 'teleWindy_settings_v1', 
     WORLD_INFO_KEY: 'teleWindy_world_info_v2', // ★★★ Key升级到v2以示区别
+    CHAT_PAGE_SIZE: 15, // ★★★ 新增：每次加载的条数
     GIST_ID_KEY: 'telewindy-gist-id',
     DEFAULT: {
         API_URL: 'https://api.siliconflow.cn/v1/chat/completions',
@@ -146,7 +152,8 @@ const STATE = {
     currentContactId: null,
     currentBookId: null, // ★★★ 新增：当前正在编辑哪本书
     settings: {}, 
-    isTyping: false
+    isTyping: false,
+    visibleMsgCount: 15 // ★★★ 新增：当前聊天窗口显示的条数，默认为15
 };
 
 // =========================================
@@ -831,6 +838,14 @@ const CloudSync = {
     },
 
     async restoreBackup() {
+
+        // --- 1. 在这里插入防手抖代码 ---
+        if (!confirm('即将从云端拉取旧数据覆盖当前数据，确认覆盖吗？')) {
+            this.showStatus('操作已取消');
+            return;
+        }
+        // -----------------------------
+
         // 恢复前先尝试获取密码，避免空密码去请求
         const auth = this.getAuth();
         if(!auth) return;
@@ -1274,7 +1289,7 @@ const UI = {
     //     this.updateRerollState(contact);
     // },
 
-    createSingleBubble(text, sender, aiAvatarUrl, timestampRaw, historyIndex) {
+    createSingleBubble(text, sender, aiAvatarUrl, timestampRaw, historyIndex, shouldAnimate = true) {
         const template = document.getElementById('msg-template');
         const clone = template.content.cloneNode(true);
         
@@ -1287,9 +1302,15 @@ const UI = {
         wrapper.classList.add(sender);
         bubble.innerText = text;
         
-        // ★★★ 新增：给 bubble 也加 data-msg-index，方便事件委托 ★★★
+        // ★★★ 修改：控制动画 ★★★
+        // 只有新消息才加动画类，历史消息不加
+        if (shouldAnimate) {
+            // 请确保你的CSS里有这个类，或者替换成你现有的动画类名
+            wrapper.classList.add('bubble-enter'); 
+        }
+
         bubble.dataset.msgIndex = historyIndex;
-        bubble.className += ' selectable-message';  // 可选：加个 class 方便样式
+        bubble.className += ' selectable-message';
 
         let timeStr = "";
         if (timestampRaw && timestampRaw.includes(' ')) {
@@ -1313,7 +1334,7 @@ const UI = {
             avatarText.innerText = currentAvatar;
         }
 
-        return clone;  // 返回 clone（已包含 .message-wrapper 等）
+        return clone;
     },
 
     // 【6. UI RENDERER】
@@ -1370,86 +1391,115 @@ const UI = {
         }
     },
 
-    /*新增1212*/
-    renderChatHistory(contact) {
-        this.els.chatMsgs.innerHTML = '';
-        this.els.chatTitle.innerText = contact.name;
-        
-        contact.history.forEach((msg, historyIndex) => {  // ← 新增 historyIndex
-            if (msg.role === 'system') return;
-            const sender = msg.role === 'assistant' ? 'ai' : 'user';
 
-            let cleanText = typeof msg === 'string' ? msg : msg.content || '';
+    // 渲染历史记录
+    renderChatHistory(contact, isLoadMore = false) {
+        const chatMsgs = this.els.chatMsgs;
+        // 获取滚动容器（通常是 ul 的父级）
+        const scrollContainer = chatMsgs.parentElement; 
+
+        // ★★★ 1. 记录当前滚动高度（用于加载更多后的定位） ★★★
+        let previousScrollHeight = 0;
+        if (isLoadMore) {
+            previousScrollHeight = scrollContainer.scrollHeight;
+        }
+
+        chatMsgs.innerHTML = '';
+        this.els.chatTitle.innerText = contact.name;
+
+        const totalMsgs = contact.history.length;
+        let startIndex = totalMsgs - STATE.visibleMsgCount;
+        if (startIndex < 0) startIndex = 0;
+
+        // 渲染“加载更多”按钮
+        if (startIndex > 0) {
+            const loadMoreBtn = document.createElement('div');
+            loadMoreBtn.className = 'load-more-btn';
+            loadMoreBtn.innerText = '点击加载更多消息';
+            loadMoreBtn.onclick = () => {
+                STATE.visibleMsgCount += CONFIG.CHAT_PAGE_SIZE;
+                this.renderChatHistory(contact, true);
+            };
+            chatMsgs.appendChild(loadMoreBtn);
+        }
+
+        // 遍历并渲染消息
+        for (let i = startIndex; i < totalMsgs; i++) {
+            const msg = contact.history[i];
+            const historyIndex = i; 
+
+            if (msg.role === 'system') continue;
             
+            const sender = msg.role === 'assistant' ? 'ai' : 'user';
+            let cleanText = typeof msg === 'string' ? msg : msg.content || '';
             if (sender === 'user') {
                 cleanText = cleanText.replace(/^\[[A-Z][a-z]{2}\.\d{1,2}\s\d{2}:\d{2}\]\s/, '');
             }
 
             const msgTime = typeof msg === 'string' ? null : msg.timestamp;
-            
             const paragraphs = cleanText.split(/\n\s*\n/).filter(p => p.trim());
-            
-            if (paragraphs.length === 0 && !cleanText.trim()) return;
+            if (paragraphs.length === 0 && !cleanText.trim()) continue;
 
-            // ★★★ 新增：创建消息组容器 ★★★
             const group = document.createElement('div');
             group.className = 'message-group';
-            group.dataset.msgIndex = historyIndex;  // 关键：标记属于 history 的第几条
+            group.dataset.msgIndex = historyIndex;
             group.dataset.sender = sender;
 
+            // ★★★ 关键：这里最后一个参数传 false，表示不要播放入场动画 ★★★
             if (paragraphs.length > 0) {
                 paragraphs.forEach(p => {
-                    const bubbleClone = this.createSingleBubble(p.trim(), sender, contact.avatar, msgTime, historyIndex);
+                    const bubbleClone = this.createSingleBubble(p.trim(), sender, contact.avatar, msgTime, historyIndex, false);
                     group.appendChild(bubbleClone);
                 });
             } else {
-                const bubbleClone = this.createSingleBubble(cleanText.trim(), sender, contact.avatar, msgTime, historyIndex);
+                const bubbleClone = this.createSingleBubble(cleanText.trim(), sender, contact.avatar, msgTime, historyIndex, false);
                 group.appendChild(bubbleClone);
             }
 
-            this.els.chatMsgs.appendChild(group);
-        });
+            chatMsgs.appendChild(group);
+        }
 
-        this.scrollToBottom();
+        // ★★★ 2. 滚动处理 ★★★
+        if (isLoadMore) {
+            // 加载更多模式：保持视觉位置不变
+            // 原理：新高度 - 旧高度 = 新增内容的高度。
+            // 把滚动条设置到这个差值位置，正好就是原来的顶部。
+            const newScrollHeight = scrollContainer.scrollHeight;
+            scrollContainer.scrollTop = newScrollHeight - previousScrollHeight;
+        } else {
+            // 首次进入或切换联系人：滚到底部
+            this.scrollToBottom();
+        }
+
         this.updateRerollState(contact);
     },
 
 /* 1212 - Fixed */
     appendMessageBubble(text, sender, aiAvatarUrl, timestampRaw, historyIndex = null) {
-        // 1. 安全检查：如果未传入 historyIndex，尝试自动获取
         if (historyIndex === null || historyIndex === undefined) {
             const contact = STATE.contacts.find(c => c.id === STATE.currentContactId);
             if (contact && contact.history.length > 0) {
-                // 注意：如果是在 push 之前调用这里，这个 index 指向的是上一条
-                // 所以必须确保像上面 handleSend 那样先 push 再调用
                 historyIndex = contact.history.length - 1; 
             } else {
-                historyIndex = 0; // 防止 -1 导致找不到
+                historyIndex = 0;
             }
         }
 
-        // 创建单个气泡
-        const clone = this.createSingleBubble(text, sender, aiAvatarUrl, timestampRaw, historyIndex);
+        // ★★★ 修改：最后一个参数传 true，表示新消息需要动画 ★★★
+        const clone = this.createSingleBubble(text, sender, aiAvatarUrl, timestampRaw, historyIndex, true);
 
-        // 2. 查找 DOM 中是否已经存在【相同 Index】的消息组
-        // 这里必须严格匹配 data-msg-index，确保多段落被合并到同一个组
         const existingGroup = Array.from(this.els.chatMsgs.children)
-            .reverse() // 从最新的往回找，效率高
+            .reverse()
             .find(group => group.classList.contains('message-group') && 
-                        parseInt(group.dataset.msgIndex) === historyIndex); // 严格匹配 ID
+                        parseInt(group.dataset.msgIndex) === historyIndex);
 
         if (existingGroup) {
-            // 找到了同属一条历史记录的组，追加进去
             existingGroup.appendChild(clone);
         } else {
-            // 没找到（说明是该条消息的第一个段落），新建组
             const group = document.createElement('div');
             group.className = 'message-group';
-            
-            // ★★★ 关键：将正确的 index 写入 DOM ★★★
             group.dataset.msgIndex = historyIndex; 
             group.dataset.sender = sender;
-            
             group.appendChild(clone);
             this.els.chatMsgs.appendChild(group);
         }
@@ -1545,6 +1595,10 @@ const App = {
         if (!contact) return;
         
         STATE.currentContactId = id;
+        
+        // ★★★ 新增：每次进入聊天，重置显示数量为默认值
+        STATE.visibleMsgCount = CONFIG.CHAT_PAGE_SIZE;
+
         UI.switchView('chat');
 
         // ★ 进入聊天，消除红点
@@ -1553,6 +1607,7 @@ const App = {
             Storage.saveContacts(); 
         }
 
+        // 渲染聊天记录（会根据 STATE.visibleMsgCount 截取）
         UI.renderChatHistory(contact);
         
         // ★ 刷新列表，让界面上的红点立刻消失
@@ -2011,7 +2066,6 @@ const App = {
         await Storage.saveSettings();
         UI.applyAppearance(); 
         UI.els.mainModal.classList.add('hidden');
-        alert(`设置已保存！`);
     },
 
     /*1212*/
@@ -2632,5 +2686,4 @@ window.importData = (input) => {
     reader.readAsText(input.files[0]);
 };
 // 启动应用
-
 window.onload = () => App.init();
