@@ -1884,6 +1884,9 @@ const App = {
 
         // 5. 保存到数据库
         await Storage.saveWorldInfo();
+
+        // ★★★ 新增的提示代码就在这里！ ★★★
+        alert(`条目 [${entry.comment}] 已保存成功！`); 
         
         // 6. 强制刷新列表 (解决左侧不更新的问题)
         UI.renderWorldInfoList(); 
