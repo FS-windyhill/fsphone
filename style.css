@@ -21,24 +21,29 @@
 }
 
 
-/* 你原来的 body 样式全部删掉或注释就行 */
 html, body {
-    height: 100dvh;                     /* 2025年最正确的全屏写法 */
+    height: 100dvh; /* 保持你的全屏写法 */
+    width: 100vw;
     margin: 0;
     padding: 0;
-    overflow: hidden;
-    overscroll-behavior: none;
+    overflow: hidden; /* 禁止整页滚动 */
+    overscroll-behavior: none; /* 禁止 iOS 橡皮筋效果 */
 }
 
 body {
     display: flex;
     flex-direction: column;
+    
+    /* 背景图设置 */
     background: url('wallpaper.jpg') center/cover no-repeat fixed;
-    /* 如果没有wallpaper.jpg，用这个备用色，防止一片白 */
-    margin: 0;
-    /* 关键：给 body 顶部留出状态栏的位置，防止原本的 Header 被遮挡 */
-    padding-top: var(--total-bar-height); 
-    background-color: #f0f0f0; /* 你的背景色 */
+    background-color: #f0f0f0; 
+    
+    /* ★★★ 关键修复点 1：解决底部被顶出 ★★★ */
+    /* 告诉浏览器：padding 也算在 height:100dvh 里面 */
+    box-sizing: border-box; 
+    
+    /* 顶部留白给状态栏 */
+    padding-top: var(--total-bar-height);
 }
 
 
@@ -50,6 +55,7 @@ body {
     position: relative;
     padding: 12px 24px;
     border-bottom: 1px solid rgba(220,220,220,0.9);
+    border-top: none; 
     text-align: center;
     flex-shrink: 0;
     background: rgba(255, 255, 255, 0.8);
