@@ -13,11 +13,11 @@
     --btn-color: #f5f5f5;
     --btn-border-color: #a9a9a9;
     /* 定义刘海高度变量，如果没有刘海则默认为 0px 或 20px */
-    --safe-top: env(safe-area-inset-top, 20px);
+    --safe-top: env(safe-area-inset-top, 24px);
     /* 状态栏内容高度 */
     --status-bar-height: 24px;
     /* 总高度 = 刘海 + 内容高度 */
-    --total-bar-height: calc(var(--safe-top) + var(--status-bar-height));
+    /* --total-bar-height: calc(var(--safe-top) + var(--status-bar-height)); */
 }
 
 
@@ -38,7 +38,7 @@ body {
     min-height: 100dvh; 
     width: 100vw;
     margin: 0;
-        /* 关键：必须设置这个，否则 padding-top 会把整个 body 撑高超过 100dvh */
+    /* 关键：必须设置这个，否则 padding-top 会把整个 body 撑高超过 100dvh */
     box-sizing: border-box; 
     
     /* 背景图设置 */
@@ -50,7 +50,7 @@ body {
     box-sizing: border-box; 
     
     /* 顶部留白给状态栏 */
-    padding-top: var(--total-bar-height);
+    padding-top: var(--status-bar-height);
 }
 
 
@@ -1826,7 +1826,7 @@ body.dark-mode {
     color: #ffffff;
     margin: 0;
     /* 关键：给 body 顶部留出状态栏的位置，防止原本的 Header 被遮挡 */
-    padding-top: var(--total-bar-height); 
+    padding-top: var(--status-bar-height); 
     background-color: #3a3a3a; /* 你的背景色 */
     background: url('wallpaper.jpg') center/cover no-repeat fixed;
 }
@@ -2655,7 +2655,7 @@ body.dark-mode .load-more-btn {
     left: 0;
     width: 100%;
     /* 高度包含刘海区域 */
-    height: var(--total-bar-height);
+    height: var(--status-bar-height);
     background-color: rgba(255, 255, 255, 0.8); /* 或者跟你的 Header 颜色一致 */
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(10px) saturate(180%);
@@ -2679,7 +2679,7 @@ body.dark-mode .app-status-bar {
     left: 0;
     width: 100%;
     /* 高度包含刘海区域 */
-    height: var(--total-bar-height);
+    height: var(--status-bar-height);
     background-color: rgba(57, 57, 57, 0.8); /* 或者跟你的 Header 颜色一致 */
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(10px) saturate(180%);
