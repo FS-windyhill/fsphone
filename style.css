@@ -24,6 +24,8 @@
 html, body {
     height: 100dvh; /* 保持你的全屏写法 */
     width: 100vw;
+    /* 确保 html 本身是填满的 */
+    height: 100%;
     margin: 0;
     padding: 0;
     overflow: hidden; /* 禁止整页滚动 */
@@ -33,8 +35,12 @@ html, body {
 body {
     display: flex;
     flex-direction: column;
-    
-    /* 背景图设置 */
+    min-height: 100dvh; 
+    height: -webkit-fill-available; 
+    width: 100vw;
+    margin: 0;
+        
+    /* 这里的 fixed 去掉，改为 scroll 样式，或者直接让背景跟随 body */
     background: url('wallpaper.jpg') center/cover no-repeat fixed;
     background-color: #f0f0f0; 
     
@@ -44,6 +50,9 @@ body {
     
     /* 顶部留白给状态栏 */
     padding-top: var(--total-bar-height);
+
+        position: relative;
+    overflow: hidden; /* 防止 body 整体产生滚动条 */
 }
 
 
