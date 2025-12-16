@@ -1587,6 +1587,70 @@ const UI = {
         }
     },
 
+    // 在 UI 对象中添加
+    async playWaterfall(fullText, avatar, timestamp) {
+        const paragraphs = fullText.split(/\n\s*\n/).filter(p => p.trim());
+        for (let i = 0; i < paragraphs.length; i++) {
+            if (i > 0) await new Promise(r => setTimeout(r, 400));
+            this.appendMessageBubble(paragraphs[i], 'ai', avatar, timestamp);
+        }
+    }, // <--- 注意这里要有逗号
+
+    // ================顶栏状态栏-------------------
+    initStatusBar() { 
+        // 1. 时间显示逻辑
+        const timeEl = document.getElementById('sb-time');
+        const updateTime = () => {
+            const now = new Date();
+            // 获取 HH:mm 格式
+            const timeStr = now.toLocaleTimeString('zh-CN', { 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                hour12: false 
+            });
+            if (timeEl) timeEl.textContent = timeStr;
+        };
+        updateTime(); 
+        setInterval(updateTime, 1000); 
+
+        // 2. 电量显示逻辑
+        const batTextEl = document.getElementById('sb-battery-text');
+        const batLevelEl = document.getElementById('sb-battery-level');
+        
+        const updateBatteryUI = (level, isCharging) => {
+            const percentage = Math.round(level * 100);
+            if(batTextEl) batTextEl.textContent = `${percentage}%`;
+            if(batLevelEl) {
+                batLevelEl.style.width = `${percentage}%`;
+                if (isCharging) {
+                    batLevelEl.style.backgroundColor = '#4cd964';
+                } else if (level < 0.2) {
+                    batLevelEl.style.backgroundColor = '#ff3b30';
+                } else {
+                    batLevelEl.style.backgroundColor = ''; 
+                }
+            }
+        };
+
+        if ('getBattery' in navigator) {
+            navigator.getBattery().then(battery => {
+                updateBatteryUI(battery.level, battery.charging);
+                battery.addEventListener('levelchange', () => {
+                    updateBatteryUI(battery.level, battery.charging);
+                });
+                battery.addEventListener('chargingchange', () => {
+                    updateBatteryUI(battery.level, battery.charging);
+                });
+            }).catch(err => {
+                console.log('Battery API failed:', err);
+            });
+        } else {
+            console.log('Battery API not supported.');
+        }
+    }, // <--- 别忘了这里的逗号，因为下面还有 renderPresetMenu
+
+    // ================顶栏状态栏结束-------------------
+
     // ★★★ API 预设菜单 UI (逻辑修正版) ★★★
     renderPresetMenu() {
         const containerId = 'api-preset-container';
@@ -1626,6 +1690,9 @@ const App = {
         
         // [关键点 2] 初始化界面元素（绑定 DOM 节点）
         UI.init();
+
+        // ★ 建议加这一句，确保 App.els 拿到的是初始化后的最新 DOM 元素
+        this.els = UI.els; 
         
         // [关键点 3] 绑定点击事件
         this.bindEvents();
@@ -1636,6 +1703,8 @@ const App = {
         if (typeof UI.renderContacts === 'function') {
             UI.renderContacts();
         }
+        
+        UI.initStatusBar();
         
         console.log("App initialized, contacts loaded:", STATE.contacts.length);
     },
@@ -2239,6 +2308,7 @@ handleMessageAction(action) {
         const menu = document.getElementById('msg-context-menu');
         if (menu) menu.style.display = 'none';
     },
+    
 
     bindEvents() {
         // --- Tab 切换 (便签切换小工具) ---

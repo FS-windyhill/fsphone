@@ -21,10 +21,21 @@ html, body {
     padding: 0;
     overflow: hidden;
     overscroll-behavior: none;
+    background-color: #000; /* 确保背景色覆盖白条 */
+}
+
+/* 核心修复：让文档高度补偿顶部inset，避免底部空白 */
+html {
+    min-height: 100%;
+    min-height: calc(100% + env(safe-area-inset-top));
+    /* 或更现代的：min-height: 100dvh; 但兼容性稍差 */
+
+    box-sizing: border-box;
 }
 
 body {
     display: flex;
+    min-height: 100%;
     flex-direction: column;
     background: url('wallpaper.jpg') center/cover no-repeat fixed;
     /* 如果没有wallpaper.jpg，用这个备用色，防止一片白 */
@@ -2613,6 +2624,80 @@ body.dark-mode .load-more-btn {
 }
 
 
+
+
+/* ==========状态栏==============*/ 
+.app-status-bar {
+    background-color: rgba(255, 255, 255, 0.8); /* 或者跟你的 Header 颜色一致 */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    z-index: 9999; /* 保证在最顶层 */
+    display: flex;
+    justify-content: space-between;
+    height: env(safe-area-inset-top);  /* 关键：自动等于系统状态栏高度 */
+    padding: 5px 15px 5px 15px; /* 底部留点空隙 */
+    font-size: 13px;
+    font-weight: 500;
+    color: #333; /* 字体颜色 */
+    user-select: none;
+    flex-wrap: wrap;
+    align-content: center;
+    pointer-events: none; /* 让点击穿透，不阻挡操作 */
+}
+
+body.dark-mode .app-status-bar {
+    background-color: rgba(57, 57, 57, 0.8); /* 或者跟你的 Header 颜色一致 */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    z-index: 9999; /* 保证在最顶层 */
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 15px 5px 15px; /* 底部留点空隙 */
+    font-size: 13px;
+    font-weight: 500;
+    color: #ffffff; /* 字体颜色 */
+    user-select: none;
+    pointer-events: none; /* 让点击穿透，不阻挡操作 */
+}
+
+
+
+/* 电池图标绘制 */
+.sb-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sb-battery-icon {
+    width: 22px;
+    height: 10px;
+    border: 1px solid rgba(0,0,0,0.5);
+    border-radius: 3px;
+    padding: 1px;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* 电池正极小凸起 */
+.sb-battery-icon::after {
+    content: '';
+    position: absolute;
+    right: -3px;
+    top: 4px;
+    width: 2px;
+    height: 4px;
+    background-color: rgba(0,0,0,0.5);
+    border-radius: 0 1px 1px 0;
+}
+
+.sb-battery-level {
+    height: 100%;
+    border-radius: 1px;
+    width: 100%; /* 默认满电 */
+    transition: width 0.5s, background-color 0.5s;
+}
 
 
 
