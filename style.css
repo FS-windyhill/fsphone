@@ -12,7 +12,14 @@
     --primary-btn-text: rgb(116, 118, 255);
     --btn-color: #f5f5f5;
     --btn-border-color: #a9a9a9;
+    /* 定义刘海高度变量，如果没有刘海则默认为 0px 或 20px */
+    --safe-top: env(safe-area-inset-top, 20px);
+    /* 状态栏内容高度 */
+    --status-bar-height: 24px;
+    /* 总高度 = 刘海 + 内容高度 */
+    --total-bar-height: calc(var(--safe-top) + var(--status-bar-height));
 }
+
 
 /* 你原来的 body 样式全部删掉或注释就行 */
 html, body {
@@ -28,8 +35,12 @@ body {
     flex-direction: column;
     background: url('wallpaper.jpg') center/cover no-repeat fixed;
     /* 如果没有wallpaper.jpg，用这个备用色，防止一片白 */
-    background-color: #f2f2f2; 
+    margin: 0;
+    /* 关键：给 body 顶部留出状态栏的位置，防止原本的 Header 被遮挡 */
+    padding-top: var(--total-bar-height); 
+    background-color: #f0f0f0; /* 你的背景色 */
 }
+
 
 
 /* --- Header 最终布局样式 --- */
@@ -45,6 +56,8 @@ body {
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(10px) saturate(180%);
 }
+
+
 
 /* 这两部分的样式保持不变，确保文字垂直居中 */
 .app-header h1 {
@@ -1798,7 +1811,13 @@ body.dark-mode {
     
     /* 修正字体颜色 */
     color: #ffffff;
+    margin: 0;
+    /* 关键：给 body 顶部留出状态栏的位置，防止原本的 Header 被遮挡 */
+    padding-top: var(--total-bar-height); 
+    background-color: #3a3a3a; /* 你的背景色 */
+    background: url('wallpaper.jpg') center/cover no-repeat fixed;
 }
+
 
 /* 2. 具体的样式覆盖 (Scoped Styles) */
 
@@ -2610,6 +2629,105 @@ body.dark-mode .load-more-btn {
     transition: all 0.2s;
     box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
 
+}
+
+
+
+/* =========状态栏============ */
+
+/* 状态栏容器 */
+.app-status-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* 高度包含刘海区域 */
+    height: var(--total-bar-height);
+    background-color: rgba(255, 255, 255, 0.8); /* 或者跟你的 Header 颜色一致 */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    z-index: 9999; /* 保证在最顶层 */
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end; /* 让文字沉底，避开圆角/刘海中心 */
+    padding: 5px 15px 5px 15px; /* 底部留点空隙 */
+    box-sizing: border-box;
+    font-size: 12px;
+    font-weight: 500;
+    color: #333; /* 字体颜色 */
+    user-select: none;
+    pointer-events: none; /* 让点击穿透，不阻挡操作 */
+}
+
+/* 夜间 */
+body.dark-mode .app-status-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* 高度包含刘海区域 */
+    height: var(--total-bar-height);
+    background-color: rgba(57, 57, 57, 0.8); /* 或者跟你的 Header 颜色一致 */
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+    z-index: 9999; /* 保证在最顶层 */
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end; /* 让文字沉底，避开圆角/刘海中心 */
+    padding: 5px 15px 5px 15px; /* 底部留点空隙 */
+    box-sizing: border-box;
+    font-size: 12px;
+    font-weight: 500;
+    color: #ffffff; /* 字体颜色 */
+    user-select: none;
+    pointer-events: none; /* 让点击穿透，不阻挡操作 */
+}
+
+
+
+
+/* 电池图标绘制 */
+.sb-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sb-battery-icon {
+    width: 22px;
+    height: 10px;
+    border: 1px solid rgba(0,0,0,0.5);
+    border-radius: 3px;
+    padding: 1px;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+/* 电池正极小凸起 */
+.sb-battery-icon::after {
+    content: '';
+    position: absolute;
+    right: -3px;
+    top: 2px;
+    width: 2px;
+    height: 4px;
+    background-color: rgba(0,0,0,0.5);
+    border-radius: 0 1px 1px 0;
+}
+
+.sb-battery-level {
+    height: 100%;
+    background-color: #333;
+    border-radius: 1px;
+    width: 100%; /* 默认满电 */
+    transition: width 0.5s, background-color 0.5s;
+}
+
+/* 暗色模式电池修正 */
+@media (prefers-color-scheme: dark) {
+    .sb-battery-icon::after { background-color: rgba(255,255,255,0.5); }
+    .sb-battery-level { background-color: #fff; }
 }
 
 
