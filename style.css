@@ -495,7 +495,7 @@ body {
 #contact-list-wrapper {
     width: 90vw;
     max-width: 520px;          /* 手机/平板不会太宽 */
-    height: 88vh;
+    height: 83vh;
     max-height: 820px;
     margin: auto;              /* 上下左右自动居中 */
     background: rgba(255, 255, 255, 0.72);     /* 亮色壁纸推荐 0.72 */
@@ -2643,8 +2643,9 @@ body.dark-mode .load-more-btn {
     z-index: 9999; /* 保证在最顶层 */
     justify-content: space-between;
 
-    /* 高度随 safe-area 变化，当为 0 时自然塌缩 */
-    height: env(safe-area-inset-top, 0px);
+    /* 高度随 safe-area 变化*/
+    height: 24px;
+    height: max(24px, env(safe-area-inset-top));
 
     padding: 8px 16px 8px 16px; /* 底部留点空隙 */
     box-sizing: border-box;  /* 关键！让 padding 包含在 width 100% 之内 */
