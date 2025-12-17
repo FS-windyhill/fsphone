@@ -17,7 +17,18 @@
 </head>
 <body>
 
-
+    <!-- 仿原生状态栏 -->
+    <div id="app-status-bar" class="app-status-bar">
+        <div class="sb-left">
+            <span id="sb-time">00:00</span>
+        </div>
+        <div class="sb-right">
+            <span id="sb-battery-text">100%</span>
+            <div class="sb-battery-icon">
+                <div id="sb-battery-level" class="sb-battery-level"></div>
+            </div>
+        </div>
+    </div>
 
     <div id="app-container">
         
@@ -26,18 +37,7 @@
         <!-- ======================= -->
         <div id="view-contact-list">
             <header class="app-header">
-                <!-- 仿原生状态栏 -->
-                <div id="app-status-bar" class="app-status-bar">
-                    <div class="sb-left">
-                        <span id="sb-time">00:00</span>
-                    </div>
-                    <div class="sb-right">
-                        <span id="sb-battery-text">100%</span>
-                        <div class="sb-battery-icon">
-                            <div id="sb-battery-level" class="sb-battery-level"></div>
-                        </div>
-                    </div>
-                </div>
+                
                 <h1>通讯录</h1>
                 <button id="add-contact-btn" class="header-icon-btn right" title="添加新角色">＋</button>
                 <button id="main-settings-btn" class="header-icon-btn left" title="全局设置">⚙</button>
