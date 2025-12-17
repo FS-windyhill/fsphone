@@ -1623,7 +1623,7 @@ const UI = {
             if(batLevelEl) {
                 batLevelEl.style.width = `${percentage}%`;
                 if (isCharging) {
-                    batLevelEl.style.backgroundColor = '#d9d44c85';
+                    batLevelEl.style.backgroundColor = '#a8d94c85';
                 } else if (level < 0.2) {
                     batLevelEl.style.backgroundColor = '#ff3b3085';
                 } else {
