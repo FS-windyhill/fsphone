@@ -48,7 +48,10 @@ body {
 /* 1. 修改 Header 容器，让它成为按钮定位的“锚点” */
 .app-header {
     position: relative;
-    padding: 10px 24px;
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    padding-bottom: 10px;
     border-bottom: 1px solid rgba(220,220,220,0.9);
     text-align: center;
     flex-shrink: 0;
@@ -2628,13 +2631,19 @@ body.dark-mode .load-more-btn {
 
 /* ==========状态栏==============*/ 
 .app-status-bar {
-    background-color: rgba(255, 255, 255, 0.8); /* 或者跟你的 Header 颜色一致 */
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
-    z-index: 9999; /* 保证在最顶层 */
+    /* 变成绝对定位，相对于 header 布局 */
+    position: absolute; 
+    top: 0;
+    left: 0;
+    width: 100%;
+
     display: flex;
+    background: transparent;
+    backdrop-filter: none;
+    z-index: 9999; /* 保证在最顶层 */
     justify-content: space-between;
     height: env(safe-area-inset-top);  /* 关键：自动等于系统状态栏高度 */
+
     padding: 5px 25px 5px 25px; /* 底部留点空隙 */
     font-size: 13px;
     font-weight: 500;
@@ -2646,9 +2655,6 @@ body.dark-mode .load-more-btn {
 }
 
 body.dark-mode .app-status-bar {
-    background-color: rgba(57, 57, 57, 0.8); /* 或者跟你的 Header 颜色一致 */
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(10px) saturate(180%);
     color: #ffffff5e; /* 字体颜色 */
     user-select: none;
     pointer-events: none; /* 让点击穿透，不阻挡操作 */
