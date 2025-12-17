@@ -495,7 +495,7 @@ body {
 #contact-list-wrapper {
     width: 90vw;
     max-width: 520px;          /* 手机/平板不会太宽 */
-    height: 83vh;
+    height: 85vh;
     max-height: 820px;
     margin: auto;              /* 上下左右自动居中 */
     background: rgba(255, 255, 255, 0.72);     /* 亮色壁纸推荐 0.72 */
