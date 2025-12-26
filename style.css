@@ -2753,5 +2753,137 @@ body.dark-mode .sb-battery-icon::after {
     word-wrap: break-word; /* 防止长文本溢出 */
 }
 
+/* 聊天气泡内 Markdown 表格的样式 */
+
+/* 为表格创建一个可以滚动的容器 */
+.bubble .table-container {
+    max-width: 100%;
+    overflow-x: auto; /* 这是关键：当表格太宽时，出现水平滚动条 */
+    margin-top: 8px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.bubble table {
+    width: 100%;
+    border-collapse: collapse; /* 合并边框 */
+    font-size: 14px;
+    white-space: nowrap; /* 防止单元格内容自动换行，配合滚动条使用 */
+}
+
+.bubble th,
+.bubble td {
+    padding: 8px 12px;
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    text-align: left;
+}
+
+.bubble th {
+    background-color: rgba(128, 128, 128, 0.1);
+    font-weight: bold;
+}
+
+/* 斑马条纹，提升可读性 */
+.bubble tbody tr:nth-of-type(odd) {
+    background-color: rgba(128, 128, 128, 0.05);
+}
+
+/* 解决 <p> 标签在气泡内引入的多余间距问题 */
+.message-bubble p {
+    margin: 0;
+    padding: 0;
+}
+
+/* 解决连续段落间的间距问题，让多段消息更自然 */
+/* 这会让第一个p没有上边距，但之后的每个p都会有，形成段间距 */
+.message-bubble p + p {
+    margin-top: 10px; 
+}
+
+/* 解决 <ul> 标签在气泡内引入的多余间距问题 */
+.message-bubble ul {
+    display: block;
+    list-style-type: disc;
+    margin-block-start: 0px;
+    margin-block-end: 0px;
+    padding-inline-start: 1em;
+    unicode-bidi: isolate;
+}
+
+.message-bubble ol {
+    display: block;
+    list-style-type: disc;
+    margin-block-start: 0px;
+    margin-block-end: 0px;
+    padding-inline-start: 1em;
+    unicode-bidi: isolate;
+}
+
+.chat-separator {
+    height: 1px;
+    background-color: rgba(128, 128, 128, 0.2);
+    margin: 12px 20%; /* 上下边距，左右边距20%让它短一点 */
+}
+
+/* 专门处理聊天气泡内的标题标签，覆盖它们的默认样式 */
+.message-bubble h1,
+.message-bubble h2,
+.message-bubble h3,
+.message-bubble h4,
+.message-bubble h5,
+.message-bubble h6,
+.message-bubble b, 
+.message-bubble strong {
+    font-weight: bold;
+    font-size: inherit; /* 关键！强制继承气泡的字号 */
+    line-height: inherit; /* 继承行高 */
+    color: inherit;       /* 继承颜色 */
+    margin: 0;            /* 清除标题默认的 margin */
+    padding: 0;
+}
+
+/* 如果希望标题和普通文本之间有一点距离，可以加上这个 */
+.message-bubble h1,
+.message-bubble h2,
+.message-bubble h3 {
+    margin-bottom: 4px;
+}
+
+/* 分割线 */
+.chat-separator {
+    height: 1px;
+    background-color: rgba(233, 233, 233, 0.5);
+    border-radius: 1px;
+    margin: 0px 0 12px 0px;
+    width: 70%; /* 加上宽度限制，确保居中效果 */
+    align-self: center; /* 如果父容器是flex，这有助于居中 */
+}
+
+/* 确保 message-group 允许子元素居中（可选，视你原有的message-group样式而定）*/
+.message-group {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 定义动画关键帧：分割线 */
+@keyframes lineExpand {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 带有这个类的分割线会播放动画 */
+.chat-separator.animate {
+    /* 0.5s是时长，ease-out是速度曲线 */
+    animation: lineExpand 0.5s ease-out forwards; 
+    transform-origin: center; /* 从中间向两边展开 */
+}
+
 
 
