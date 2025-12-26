@@ -1,104 +1,144 @@
 /*
-中文树状代码目录：
-- 1. CONFIG & STATE (配置与状态)
-  - CONFIG: 定义配置常量，包括存储键、默认值和系统提示。
-  - STATE: 定义运行时状态，包括联系人、世界信息书籍、当前联系人ID等。
-- 1.5. DB UTILS (IndexedDB 简易封装)
-  - DB.open(): 打开IndexedDB数据库，返回Promise。
-  - DB.get(key): 从数据库获取指定键的值，返回Promise。
-  - DB.set(key, value): 将值存入数据库的指定键，返回Promise。
-  - DB.remove(key): 删除数据库中的指定键，返回Promise。
-  - DB.clear(): 清空整个对象存储，返回Promise。
-  - DB.exportAll(): 使用游标导出数据库所有数据，返回Promise。
-- 2. STORAGE SERVICE (本地持久化 - IndexedDB 版)
-  - Storage.load(): 加载设置、联系人和世界信息，支持从LocalStorage迁移数据。
-  - Storage.saveContacts(): 保存联系人数据到IndexedDB。
-  - Storage.saveSettings(): 保存设置数据到IndexedDB。
-  - Storage.saveWorldInfo(): 保存世界信息书籍到IndexedDB。
-  - Storage.exportAllForBackup(): 导出所有数据用于备份，加密Token。
-  - Storage.importFromBackup(data): 从备份数据导入，解密Token并写入数据库。
-- 3. WORLD INFO ENGINE (已修正)
-  - WorldInfoEngine.importFromST(jsonString, fileName): 从SillyTavern格式导入世界信息条目，创建新书。
-  - WorldInfoEngine.exportToST(book): 将世界书导出为SillyTavern格式的JSON。
-  - WorldInfoEngine.scan(userText, history, currentContactId, currentContactName): 扫描上下文触发世界信息条目，返回触发的知识内容。
-- 4. API SERVICE (LLM通信)
-  - API.getProvider(url): 根据URL判断API提供者（如claude、gemini或openai）。
-  - API.fetchModels(url, key): 从API获取模型列表。
-  - API.estimateTokens(text): 估算文本的Token数量，区分CJK和其它字符。
-  - API.chat(messages, settings): 发送聊天消息到API，支持不同提供者，记录日志并返回响应。
-- 5. CLOUD SYNC (终极混合版 - 含安全防御)
-  - CloudSync.init(): 初始化云同步UI，从本地存储恢复设置。
-  - CloudSync.toggleMode(): 根据选择切换自定义URL或Gist模式，更新UI。
-  - CloudSync.showStatus(msg, isError): 在UI显示状态消息，带颜色区分。
-  - CloudSync.getAuth(): 获取认证Token或密码，支持加密兼容。
-  - CloudSync._maskToken(token): 混淆Token以防扫描。
-  - CloudSync._unmaskToken(maskedToken): 解混淆Token。
-  - CloudSync._preparePayload(): 准备上传备份数据，混淆Token。
-  - CloudSync.updateBackup(): 根据模式上传备份到自定义服务器或Gist。
-  - CloudSync.findBackup(): 在GitHub搜索TeleWindy备份Gist并填充ID。
-  - CloudSync.restoreBackup(): 从云端恢复备份，确认覆盖。
-  - CloudSync._safeRestore(data): 安全恢复数据，解混淆Token并处理空间问题。
-  - CloudSync._uploadToCustom(): 上传备份到自定义服务器。
-  - CloudSync._fetchFromCustom(password): 从自定义服务器获取备份。
-  - CloudSync._uploadToGist(): 上传备份到GitHub Gist，支持创建或更新。
-  - CloudSync._fetchFromGist(token): 从GitHub Gist获取备份，支持截断处理。
-- 6. UI RENDERER (DOM 操作)
-  - UI.init(): 初始化UI，应用外观并渲染联系人。
-  - UI.applyAppearance(): 应用壁纸和主题到body。
-  - UI.toggleTheme(newTheme): 切换主题并保存。
-  - UI.switchView(viewName): 切换联系人列表或聊天视图。
-  - UI.renderContacts(): 渲染联系人列表，包括头像、预览和红点。
-  - UI.renderBookSelect(): 渲染世界书选择下拉框。
-  - UI.updateCurrentBookSettingsUI(): 更新当前书的角色绑定UI。
-  - UI.renderWorldInfoList(): 渲染世界信息条目列表，带高亮。
-  - UI.initWorldInfoTab(): 初始化世界信息Tab，包括角色选择和渲染。
-  - UI.showEditModal(oldText, onConfirmCallback): 显示消息编辑模态框。
-  - UI.removeLatestAiBubbles(): 移除聊天中最新AI消息组。
-  - UI.renderChatHistory(contact, isLoadMore): 渲染聊天历史，支持加载更多。
-  - UI.createSingleBubble(text, sender, aiAvatarUrl, timestampRaw, historyIndex, shouldAnimate): 创建单个消息气泡，支持Markdown和动画。
-  - UI.appendMessageBubble(text, sender, aiAvatarUrl, timestampRaw, historyIndex): 追加消息气泡到组。
-  - UI.scrollToBottom(): 滚动聊天到底部。
-  - UI.setLoading(isLoading, contactId): 设置加载状态，显示“正在输入”或“在线”。
-  - UI.updateRerollState(contact): 更新reroll按钮状态。
-  - UI.playWaterfall(fullText, avatar, timestamp): 逐段追加AI消息，模拟瀑布动画。
-  - UI.initStatusBar(): 初始化顶栏状态栏，包括时间和电量。
-  - UI.renderPresetMenu(): 渲染API预设菜单，包括保存、加载和删除。
-- 7. APP CONTROLLER (业务逻辑)
-  - App.init(): 初始化应用，加载存储并绑定事件。
-  - App.enterChat(id): 进入指定联系人聊天，渲染历史并更新状态。
-  - App.handleSend(isReroll): 处理消息发送或reroll，包括API调用和UI更新。
-  - App.openSettings(): 打开设置模态，填充值并初始化Tab。
-  - App.switchWorldInfoBook(bookId): 切换当前世界书并刷新UI。
-  - App.bindCurrentBookToChar(charId): 绑定当前书到角色并保存。
-  - App.loadWorldInfoEntry(uid): 加载世界信息条目到编辑器。
-  - App.saveWorldInfoEntry(): 保存或新建世界信息条目。
-  - App.deleteWorldInfoEntry(): 删除世界信息条目。
-  - App.clearWorldInfoEditor(): 清空世界信息编辑器。
-  - App.createNewBook(): 创建新世界书。
-  - App.renameCurrentBook(): 重命名当前世界书。
-  - App.deleteCurrentBook(): 删除当前世界书。
-  - App.exportCurrentBook(): 导出当前世界书为JSON。
-  - App.handleImportWorldInfo(file): 处理世界信息导入文件。
-  - App.handleSavePreset(): 保存API预设。
-  - App.handleLoadPreset(index): 加载API预设到UI。
-  - App.handleDeletePreset(): 删除API预设。
-  - App.saveSettingsFromUI(): 从设置UI保存配置。
-  - App.handleMessageAction(action): 处理消息动作如编辑、删除、复制。
-  - App.hideMessageContextMenu(): 隐藏消息上下文菜单。
-  - App.showMessageContextMenu(msgIndex, rect): 显示消息上下文菜单，防误触。
-  - App.bindEvents(): 绑定所有事件监听器。
-  - App.readFile(file): 读取文件为Base64。
-  - App.fetchModelsForUI(): 从API获取模型并更新UI。
-  - App.bindImageUpload(inputId, imgId, inputUrlId, callback): 绑定图片上传事件。
-  - App.openEditModal(id): 打开角色编辑模态，填充值。
-  - App.saveContactFromModal(): 从模态保存角色数据。
-- 8. UTILS & EXPORTS (工具与启动)
-  - formatTimestamp(): 生成格式化的时间戳字符串。
-  - window.exportData(): 导出所有数据为JSON文件。
-  - window.importData(input): 从文件导入备份数据，支持空间检查。
-  - parseCustomMarkdown(text): 解析自定义Markdown为HTML，支持加粗、斜体等。
-  - cleanMarkdownForCopy(text): 清洗Markdown为纯文本，用于复制。
-  - window.onload: 启动应用初始化。
+// =========================================
+// 中文的树状代码目录
+// =========================================
+// 注意：这是一个树状结构，展示代码的组织架构。每个章节对应代码中的主要部分，每个函数/对象后附带简要描述（这是干啥的）。
+// 
+// - 1. CONFIG & STATE (配置与状态)
+//   - CONFIG: 常量配置对象，包含存储键、默认设置和系统提示等，用于全局配置。
+//     - STORAGE_KEY: 'teleWindy_char_data_v1' // 联系人数据存储键
+//     - SETTINGS_KEY: 'teleWindy_settings_v1' // 设置存储键
+//     - WORLD_INFO_KEY: 'teleWindy_world_info_v2' // 世界信息存储键（升级到v2）
+//     - CHAT_PAGE_SIZE: 15 // 每次加载的聊天条数
+//     - GIST_ID_KEY: 'telewindy-gist-id' // Gist ID存储键
+//     - DEFAULT: 默认配置对象，包括API_URL、MODEL等默认值
+//     - SYSTEM_PROMPT: 系统提示字符串，用于指导AI行为
+//   - STATE: 运行时状态对象，存储动态数据，如联系人列表、当前ID等。
+//     - contacts: [] // 联系人数组
+//     - worldInfoBooks: [] // 世界信息书籍数组
+//     - currentContactId: null // 当前联系人ID
+//     - currentBookId: null // 当前世界信息书籍ID
+//     - settings: {} // 当前设置
+//     - typingContactId: null // 正在输入的联系人ID
+//     - visibleMsgCount: 15 // 当前显示的消息条数
+// 
+// - 1.5. DB UTILS (IndexedDB 简易封装)
+//   - DB: IndexedDB操作对象，提供数据库交互方法。
+//     - dbName: 'TeleWindyDB' // 数据库名称
+//     - storeName: 'store' // 对象存储名称
+//     - version: 1 // 数据库版本
+//     - open(): 打开数据库，返回Promise // 异步打开IndexedDB数据库，处理升级。
+//     - get(key): 获取指定键的值，返回Promise // 从数据库读取数据。
+//     - set(key, value): 设置指定键的值，返回Promise // 向数据库写入数据。
+//     - remove(key): 删除指定键，返回Promise // 从数据库删除数据。
+//     - clear(): 清空存储，返回Promise // 清空整个对象存储。
+//     - exportAll(): 导出所有数据，返回Promise // 使用游标遍历并导出所有键值对。
+// 
+// - 2. STORAGE SERVICE (本地持久化 - IndexedDB 版)
+//   - Storage: 存储服务对象，处理数据加载和保存，包括迁移逻辑。
+//     - load(): 加载所有数据，包括设置、联系人和世界信息 // 从IndexedDB或LocalStorage加载数据，进行迁移和默认处理。
+//     - saveContacts(): 保存联系人数据 // 将STATE.contacts保存到IndexedDB。
+//     - saveSettings(): 保存设置数据 // 将STATE.settings保存到IndexedDB。
+//     - saveWorldInfo(): 保存世界信息数据 // 将STATE.worldInfoBooks保存到IndexedDB。
+//     - exportAllForBackup(): 导出所有数据用于备份 // 从DB导出数据，加密Token，返回对象。
+//     - importFromBackup(data): 导入备份数据 // 清空DB，解密Token，写入新数据。
+// 
+// - 3. WORLD INFO ENGINE (世界信息引擎，已修正)
+//   - WorldInfoEngine: 世界信息处理对象，管理导入、导出和扫描。
+//     - importFromST(jsonString, fileName): 从SillyTavern格式导入世界信息 // 解析JSON，创建新书籍条目，兼容旧格式。
+//     - exportToST(book): 导出世界信息到SillyTavern格式 // 将书籍条目转换为JSON字符串。
+//     - scan(userText, history, currentContactId, currentContactName): 扫描上下文触发世界信息 // 检查关键词或常量，返回触发的世界信息内容。
+// 
+// - 4. API SERVICE (LLM通信)
+//   - API: API服务对象，处理模型获取和聊天请求。
+//     - getProvider(url): 根据URL获取提供商类型 // 判断API是Claude、Gemini还是OpenAI。
+//     - fetchModels(url, key): 获取模型列表 // 发送GET请求到/models端点，返回JSON。
+//     - estimateTokens(text): 估算Token数量 // 根据字符类型粗略计算Token消耗。
+//     - chat(messages, settings): 发送聊天请求 // 构建请求体，调用API，处理不同提供商，返回AI响应。
+// 
+// - 5. CLOUD SYNC (云同步，终极混合版 - 含安全防御)
+//   - CloudSync: 云同步对象，处理Gist或自定义服务器备份。
+//     - els: DOM元素对象 // 元素引用集合
+//     - init(): 初始化同步界面 // 恢复保存的模式、URL等，调用toggleMode。
+//     - toggleMode(): 切换同步模式 // 根据选择显示/隐藏URL或Gist ID输入。
+//     - showStatus(msg, isError): 显示状态消息 // 更新状态文本和颜色。
+//     - getAuth(): 获取认证Token或密码 // 从输入或设置读取Token，处理加密。
+//     - _maskToken(token): 混淆Token // 反转并base64编码Token以防扫描。
+//     - _unmaskToken(maskedToken): 解混淆Token // base64解码并反转Token。
+//     - _preparePayload(): 准备上传负载 // 导出数据，混淆Token，添加元信息。
+//     - updateBackup(): 更新备份 // 根据模式调用自定义或Gist上传。
+//     - findBackup(): 查找Gist备份 // 请求Gist列表，匹配描述，更新ID。
+//     - restoreBackup(): 恢复备份 // 确认后从云端拉取数据，调用_safeRestore。
+//     - _safeRestore(data): 安全恢复数据 // 解混淆Token，清空旧数据，导入新数据，处理Quota错误。
+//     - _uploadToCustom(): 上传到自定义服务器 // POST负载到自定义URL，使用密码认证。
+//     - _fetchFromCustom(password): 从自定义服务器拉取 // GET请求，使用密码认证，返回JSON。
+//     - _uploadToGist(): 上传到Gist // POST或PATCH到Gist API，创建或更新备份。
+//     - _fetchFromGist(token): 从Gist拉取 // GET Gist内容，处理截断，返回JSON。
+// 
+// - 6. UI RENDERER (DOM 操作)
+//   - UI: UI渲染对象，处理界面更新和事件。
+//     - els: DOM元素对象 // 元素引用集合
+//     - init(): 初始化UI // 应用外观，渲染联系人，初始化CloudSync。
+//     - applyAppearance(): 应用外观设置 // 设置背景、主题。
+//     - toggleTheme(newTheme): 切换主题 // 更新设置，应用外观。
+//     - switchView(viewName): 切换视图 // 显示/隐藏联系人列表或聊天视图。
+//     - renderContacts(): 渲染联系人列表 // 使用模板克隆填充联系人数据，包括预览和红点。
+//     - renderBookSelect(): 渲染世界书选择下拉 // 填充书籍选项，更新UI。
+//     - updateCurrentBookSettingsUI(): 更新当前书设置UI // 设置书籍绑定角色选择。
+//     - renderWorldInfoList(): 渲染世界信息条目列表 // 填充条目，高亮当前编辑。
+//     - initWorldInfoTab(): 初始化世界信息Tab // 填充角色选择，渲染书籍和列表。
+//     - showEditModal(oldText, onConfirmCallback): 显示编辑弹窗 // 填充旧文本，绑定确认回调。
+//     - removeLatestAiBubbles(): 移除最新AI气泡 // 删除聊天中最后一个AI消息组。
+//     - renderChatHistory(contact, isLoadMore, keepScrollPosition): 渲染聊天历史 // 渲染消息，支持分页加载，控制滚动。
+//     - appendMessageBubble(text, sender, aiAvatarUrl, timestampRaw, historyIndex): 添加消息气泡 // 创建并追加气泡到组，支持动画。
+//     - appendSeparator(shouldAnimate): 添加分割线 // 创建并追加分割线，支持动画。
+//     - scrollToBottom(): 滚动到底部 // 将聊天容器滚动到最底。
+//     - setLoading(isLoading, contactId): 设置加载状态 // 更新“正在输入”状态，仅针对当前联系人。
+//     - updateRerollState(contact): 更新重滚按钮状态 // 根据历史启用/禁用重滚按钮。
+//     - playWaterfall(fullText, avatar, timestamp): 播放瀑布式动画 // 逐段渲染AI响应，支持分割线和动画。
+//     - initStatusBar(): 初始化状态栏 // 更新时间、电量显示，绑定事件。
+//     - renderPresetMenu(): 渲染API预设菜单 // 填充预设选项，绑定事件。
+// 
+// - 7. APP CONTROLLER (业务逻辑)
+//   - App: 应用控制器对象，管理事件和逻辑。
+//     - els: DOM元素引用 // 来自UI.els
+//     - init(): 初始化应用 // 加载存储，初始化UI，绑定事件，渲染联系人。
+//     - enterChat(id): 进入聊天 // 设置当前ID，切换视图，渲染历史，更新状态。
+//     - handleSend(isReroll): 处理发送消息 // 构建消息，调用API，渲染响应，处理重滚。
+//     - openSettings(): 打开设置弹窗 // 填充设置值，渲染预设，初始化世界信息Tab。
+//     - switchWorldInfoBook(bookId): 切换世界书 // 更新当前ID，刷新UI。
+//     - bindCurrentBookToChar(charId): 绑定书籍到角色 // 更新书籍characterId，保存。
+//     - loadWorldInfoEntry(uid): 加载世界信息条目 // 填充编辑器输入框，刷新列表。
+//     - saveWorldInfoEntry(): 保存世界信息条目 // 更新或新建条目，保存，刷新UI。
+//     - deleteWorldInfoEntry(): 删除世界信息条目 // 移除条目，保存，清空编辑器，刷新列表。
+//     - clearWorldInfoEditor(): 清空编辑器 // 重置输入框，刷新列表。
+//     - createNewBook(): 创建新书 // 提示名称，添加新书，保存，刷新UI。
+//     - renameCurrentBook(): 重命名当前书 // 提示新名，更新，保存，刷新选择。
+//     - deleteCurrentBook(): 删除当前书 // 确认后移除书，切换到第一本，保存，刷新UI。
+//     - exportCurrentBook(): 导出当前书 // 转换为JSON，下载文件。
+//     - handleImportWorldInfo(file): 处理导入世界信息 // 读取文件，导入新书，保存，刷新UI。
+//     - handleSavePreset(): 保存API预设 // 提示名称，添加预设，保存，刷新菜单。
+//     - handleLoadPreset(index): 加载API预设 // 填充URL、Key、Model。
+//     - handleDeletePreset(): 删除API预设 // 确认后移除预设，保存，刷新菜单。
+//     - saveSettingsFromUI(): 从UI保存设置 // 更新设置，处理URL，保存，应用外观。
+//     - handleMessageAction(action): 处理消息动作 // 根据动作编辑/删除/复制消息，保存，刷新历史。
+//     - hideMessageContextMenu(): 隐藏上下文菜单 // 设置display none，重置索引。
+//     - showMessageContextMenu(msgIndex, rect): 显示上下文菜单 // 设置索引，绑定事件，防误触锁定。
+//     - bindEvents(): 绑定事件 // 绑定所有点击、输入、触摸事件。
+//     - readFile(file): 读取文件为Base64 // 返回Promise，读取DataURL。
+//     - fetchModelsForUI(): 从UI获取模型 // 调用API.fetchModels，填充选项。
+//     - bindImageUpload(inputId, imgId, inputUrlId, callback): 绑定图片上传 // 监听change，读取Base64，更新预览，调用回调。
+//     - openEditModal(id): 打开编辑弹窗 // 设置编辑ID，填充值，显示/隐藏按钮。
+//     - saveContactFromModal(): 从弹窗保存联系人 // 更新或新建联系人，保存，刷新UI。
+// 
+// - 8. UTILS & EXPORTS (工具与启动)
+//   - formatTimestamp(): 格式化时间戳 // 返回如"Dec.26 14:30"的字符串。
+//   - window.exportData(): 全局导出函数 // 异步导出备份JSON文件。
+//   - window.importData(input): 全局导入函数 // 读取文件，确认覆盖，导入数据，处理Quota错误。
+//   - renderer: marked.Renderer对象 // 自定义Markdown渲染器，处理表格。
+//   - parseCustomMarkdown(text): 解析自定义Markdown // 使用marked解析，DOMPurify净化，返回HTML。
+//   - cleanMarkdownForCopy(text): 清洗Markdown为纯文本 // 去除符号，适合复制。
+//   - window.onload: 启动应用 // 调用App.init()。
 */
 
 
@@ -1136,6 +1176,13 @@ const UI = {
                 
                 // 正则去时间戳
                 content = content.replace(/^\[[A-Z][a-z]{2}\.\d{1,2}\s\d{2}:\d{2}\]\s/, '');
+
+                // ==========================================================
+                // ★ 新增代码：在这里添加一行，用正则去除Markdown符号 ★
+                // 这个表达式会移除星号、井号、下划线、反引号等常见Markdown标记
+                content = content.replace(/(\*\*|__|\*|_|#|`|>{1,}\s|- |\d+\.\s|\[(.*?)\]\((.*?)\)|!\[(.*?)\]\((.*?)\))/g, '');
+                // ==========================================================
+
                 // 拆分段落
                 const chunks = content.split(/\n\s*\n/).filter(p => p.trim());
 
@@ -1417,9 +1464,15 @@ const UI = {
 
     // 渲染历史记录
 // 渲染历史记录
-    renderChatHistory(contact, isLoadMore = false) {
+    renderChatHistory(contact, isLoadMore = false, keepScrollPosition = false) {
         const chatMsgs = this.els.chatMsgs;
         const scrollContainer = chatMsgs.parentElement; 
+
+        // ★★★ 1. 只有在“首次完全加载”时，才隐藏界面，防止闪烁 ★★★
+        // 如果是加载更多或删除消息，不要隐藏，否则体验不好
+        if (!isLoadMore && !keepScrollPosition) {
+            chatMsgs.style.opacity = '0'; 
+        }
 
         let previousScrollHeight = 0;
         if (isLoadMore) {
@@ -1433,6 +1486,7 @@ const UI = {
         let startIndex = totalMsgs - STATE.visibleMsgCount;
         if (startIndex < 0) startIndex = 0;
 
+        // 渲染“加载更多”按钮
         if (startIndex > 0) {
             const loadMoreBtn = document.createElement('div');
             loadMoreBtn.className = 'load-more-btn';
@@ -1444,6 +1498,7 @@ const UI = {
             chatMsgs.appendChild(loadMoreBtn);
         }
 
+        // 遍历并渲染消息
         for (let i = startIndex; i < totalMsgs; i++) {
             const msg = contact.history[i];
             const historyIndex = i; 
@@ -1472,21 +1527,15 @@ const UI = {
             if (paragraphs.length > 0) {
                 paragraphs.forEach(p => {
                     const trimmedP = p.trim();
-                    // ★★★ 修改开始：处理分割线和Markdown ★★★
                     if (trimmedP === '---') {
-                        // 创建分割线并直接加入 group
-                        // ★★★ 修改：创建分割线并加上动画类 ★★★
                         const separator = document.createElement('div');
-                        // 加上 'animate' 类，让它在历史记录渲染时也播放动画
-                        separator.className = 'chat-separator animate'; 
+                        separator.className = 'chat-separator'; 
                         group.appendChild(separator);
                     } else {
-                        // 解析 Markdown 并创建气泡
                         const formattedContent = parseCustomMarkdown(trimmedP);
                         const bubbleClone = this.createSingleBubble(formattedContent, sender, contact.avatar, msgTime, historyIndex, false);
                         group.appendChild(bubbleClone);
                     }
-                    // ★★★ 修改结束 ★★★
                 });
             } else {
                 const formattedContent = parseCustomMarkdown(cleanText.trim());
@@ -1497,11 +1546,23 @@ const UI = {
             chatMsgs.appendChild(group);
         }
 
+        // ★★★ 2. 滚动与显形处理 ★★★
         if (isLoadMore) {
             const newScrollHeight = scrollContainer.scrollHeight;
             scrollContainer.scrollTop = newScrollHeight - previousScrollHeight;
+        } else if (keepScrollPosition) {
+            // 保持不动
         } else {
+            // 首次加载
+            // 先立即滚一次（虽然可能不准，但先滚了再说）
             this.scrollToBottom();
+
+            // 使用 requestAnimationFrame 在下一帧恢复显示
+            // 这样用户看到界面的时候，已经是在底部了
+            requestAnimationFrame(() => {
+                this.scrollToBottom(); // 双重保险，再滚一次
+                chatMsgs.style.opacity = '1'; // 瞬间显示，用户感觉不到闪烁
+            });
         }
 
         this.updateRerollState(contact);
@@ -1587,19 +1648,40 @@ const UI = {
     },
 
 
-    // 在 UI 对象中添加
-    async playWaterfall(fullText, avatar, timestamp) {
-        // ★★★ 修改：预处理 > 符号 ★★★
-        // 逻辑：把“行首的 >”替换为“双换行”，这样 split 时它就会变成独立段落
-        // replace(/(^|\n)>\s*/g, '\n\n') 意思是在开头或换行后的 >
+    // 在 UI 对象中
+    async playWaterfall(fullText, avatar, timestamp, historyIndex) { // <-- 接受新参数
+        // 1. Pre-process text
         const processedText = fullText.replace(/(^|\n)>\s*/g, '\n\n');
-
-        // 使用处理后的文本进行切分
         const paragraphs = processedText.split(/\n\s*\n/).filter(p => p.trim());
+
+        // 2. Create the container group
+        const group = document.createElement('div');
+        group.className = 'message-group';
+        group.dataset.sender = 'ai';
         
+        // ★★★ 核心修复 (Part 3): 将接收到的索引应用到 group 上 ★★★
+        group.dataset.msgIndex = historyIndex;
+
+        this.els.chatMsgs.appendChild(group);
+        
+        // 3. Loop through paragraphs and add content to the new group
         for (let i = 0; i < paragraphs.length; i++) {
             if (i > 0) await new Promise(r => setTimeout(r, 400));
-            this.appendMessageBubble(paragraphs[i], 'ai', avatar, timestamp);
+            
+            const p = paragraphs[i].trim();
+
+            if (p === '---') {
+                const separator = document.createElement('div');
+                separator.className = 'chat-separator animate';
+                group.appendChild(separator);
+            } else {
+                const htmlContent = parseCustomMarkdown(p);
+                // It's also good practice to pass the correct index down
+                const bubbleClone = this.createSingleBubble(htmlContent, 'ai', avatar, timestamp, historyIndex, true);
+                group.appendChild(bubbleClone);
+            }
+            
+            this.scrollToBottom();
         }
     },
 
@@ -1779,29 +1861,43 @@ const App = {
             // ★★★ 修改开始：用户消息渲染逻辑 ★★★
             const paragraphs = userText.split(/\n\s*\n/).filter(p => p.trim());
             
+            // 1. 创建用户消息的“容器”组
+            const group = document.createElement('div');
+            group.className = 'message-group';
+            group.dataset.msgIndex = currentMsgIndex;
+            group.dataset.sender = 'user';
+            
+            // 2. 遍历段落，将内容添加到新建的 group 中
             if (paragraphs.length > 0) {
                 paragraphs.forEach(p => {
                     const trimmedP = p.trim();
-                    // 判断是否为分割线
                     if (trimmedP === '---') {
-                        // ★ 改这里：传入 true，表示需要播放动画
-                        UI.appendSeparator(true); 
+                        // 创建分割线并添加到 group
+                        const separator = document.createElement('div');
+                        separator.className = 'chat-separator animate';
+                        group.appendChild(separator);
                     } else {
-                        // 这是一个普通段落，解析 Markdown 并显示气泡
-                        UI.appendMessageBubble(parseCustomMarkdown(trimmedP), 'user', null, timestamp, currentMsgIndex);
+                        // 创建气泡并添加到 group
+                        const formattedContent = parseCustomMarkdown(trimmedP);
+                        const bubble = UI.createSingleBubble(formattedContent, 'user', null, timestamp, currentMsgIndex, true);
+                        group.appendChild(bubble);
                     }
                 });
             } else {
-                // 防止空消息，虽然前面的 check 已经拦住了
-                UI.appendMessageBubble(parseCustomMarkdown(userText), 'user', null, timestamp, currentMsgIndex);
+                 const formattedContent = parseCustomMarkdown(userText);
+                 const bubble = UI.createSingleBubble(formattedContent, 'user', null, timestamp, currentMsgIndex, true);
+                 group.appendChild(bubble);
             }
-            // ★★★ 修改结束 ★★★
+
+            // 3. 把完整构建好的 group 一次性添加到聊天界面
+            UI.els.chatMsgs.appendChild(group);
+            UI.scrollToBottom();
 
             UI.els.input.value = '';            
             UI.els.input.style.height = '38px'; 
             if (window.innerWidth < 800) UI.els.input.blur();
             else UI.els.input.focus(); 
-        }        
+        }
 
         await Storage.saveContacts();
         
@@ -1836,6 +1932,9 @@ const App = {
             const aiTimestamp = formatTimestamp();
             
             contact.history.push({ role: 'assistant', content: aiText, timestamp: aiTimestamp });
+
+            // ★★★ 核心修复 (Part 1): 获取新消息的索引 ★★★
+            const newAiMessageIndex = contact.history.length - 1;
             
             if (STATE.currentContactId !== contact.id) {
                 STATE.typingContactId = null; 
@@ -1848,7 +1947,8 @@ const App = {
             await Storage.saveContacts();
             UI.renderContacts(); 
 
-            await UI.playWaterfall(aiText, contact.avatar, aiTimestamp); 
+            // ★★★ 核心修复 (Part 2): 将索引传递给 playWaterfall ★★★
+            await UI.playWaterfall(aiText, contact.avatar, aiTimestamp, newAiMessageIndex); 
             
             UI.setLoading(false, contact.id);
             
@@ -2192,7 +2292,7 @@ const App = {
 
     /*1212*/
     // 【7. APP CONTROLLER】
-handleMessageAction(action) {
+    handleMessageAction(action) {
         // 1. 获取选中索引
         const msgIndex = STATE.selectedMessageIndex;
 
@@ -2236,15 +2336,29 @@ handleMessageAction(action) {
                     msgData.content = timestampPart + newText;
                     
                     Storage.saveContacts(); 
-                    UI.renderChatHistory(currentContact);
+
+                    // ★★★ 核心修复：加上 (..., false, true) ★★★
+                    // 告诉渲染函数：“不要加载更多，但要保持滚动位置”
+                    UI.renderChatHistory(currentContact, false, true);
                 }
             });
         } 
         else if (action === 'delete') {
             if (confirm("确定要删除这条消息吗？")) {
+
+                // 1. 获取当前滚动条位置（保险起见，虽然通常不需要手动恢复）
+                const scrollContainer = UI.els.chatMsgs.parentElement;
+                const currentScrollTop = scrollContainer.scrollTop;
+
+                // 2. 执行删除数据
                 currentContact.history.splice(msgIndex, 1);
+
+                // 3. 保存
                 Storage.saveContacts();
-                UI.renderChatHistory(currentContact);
+
+                // 4. ★★★ 重新渲染，并传入 true (keepScrollPosition) ★★★
+                // 这样 UI 就不会自动滚到底部了
+                UI.renderChatHistory(currentContact, false, true); 
             }
         }
         else if (action === 'copy') {
@@ -2261,12 +2375,12 @@ handleMessageAction(action) {
             contentToCopy = cleanMarkdownForCopy(contentToCopy);
 
             navigator.clipboard.writeText(contentToCopy)
-                .then(() => {
-                    alert("已复制纯文本"); 
-                })
-                .catch(err => {
-                    console.error("复制失败:", err);
-                });
+                // .then(() => {
+                //     alert("已复制纯文本"); 
+                // })
+                // .catch(err => {
+                //     console.error("复制失败:", err);
+                // });
         }
     },
 
@@ -2484,48 +2598,46 @@ handleMessageAction(action) {
 
         // 1. 触摸开始
         UI.els.chatMsgs.addEventListener('touchstart', e => {
-            const bubble = e.target.closest('.message-bubble');
-            // 如果点的不是气泡，或者已经有选中的文字(用户想调整选区)，则不触发自定义长按
-            if (!bubble || window.getSelection().toString().length > 0) return;
+            // ★★★ 核心修改：同时获取 group 和 bubble ★★★
+            const bubble = e.target.closest('.message-bubble'); // 用于定位
+            const group = e.target.closest('.message-group');   // 用于获取索引
+
+            // 如果点的不是一个消息组，或者用户正在选词，则不触发
+            if (!group || window.getSelection().toString().length > 0) return;
             
-            const msgIndex = parseInt(bubble.dataset.msgIndex);
+            // 从 group 获取索引
+            const msgIndex = parseInt(group.dataset.msgIndex);
             if (isNaN(msgIndex)) return;
 
-            // 记录起始坐标，用于判断是否是滑动
+            // 记录起始坐标
             startX = e.touches[0].clientX;
             startY = e.touches[0].clientY;
-
-            // ★★★ 关键修改 1：去掉 e.preventDefault() ★★★
-            // 这样系统原本的长按选词、复制菜单、页面滚动都能正常工作
             
             longPressTimer = setTimeout(() => {
                 e.preventDefault();
-
-                // 2. 再次检查是否有选中文本（双重保险）
                 if (window.getSelection().toString().length > 0) return;
                 
-                // 3. 弹出你的自定义菜单
-                App.showMessageContextMenu(msgIndex, bubble.getBoundingClientRect());
+                // ★★★ 使用 bubble 的位置来弹出菜单，如果 bubble 存在的话 ★★★
+                // 这样即使用户按在分割线上，也能在 group 的位置弹出菜单
+                const rect = bubble ? bubble.getBoundingClientRect() : group.getBoundingClientRect();
+                App.showMessageContextMenu(msgIndex, rect);
 
             }, LONG_PRESS_DURATION);
 
         }, { passive: false });
 
-        // 2. 触摸移动 (解决滑动卡顿的核心)
+        // 2. 触摸移动 (这段逻辑不用改)
         UI.els.chatMsgs.addEventListener('touchmove', e => {
             if (!longPressTimer) return;
-
             const moveX = e.touches[0].clientX;
             const moveY = e.touches[0].clientY;
-
-            // 如果移动距离超过 10px，说明用户是在滑动页面，而不是长按
             if (Math.abs(moveX - startX) > 10 || Math.abs(moveY - startY) > 10) {
                 clearTimeout(longPressTimer);
                 longPressTimer = null;
             }
         }, { passive: true });
 
-        // 3. 触摸结束
+        // 3. 触摸结束 (这段逻辑不用改)
         UI.els.chatMsgs.addEventListener('touchend', () => {
             if (longPressTimer) {
                 clearTimeout(longPressTimer);
@@ -2533,22 +2645,28 @@ handleMessageAction(action) {
             }
         }, { passive: true });
 
-        // 4. 桌面端鼠标长按 (保持不变，或根据需要优化)
+        // 4. 桌面端鼠标长按 (应用相同的修改逻辑)
         UI.els.chatMsgs.addEventListener('mousedown', e => {
             if (e.button !== 0) return; 
-            const bubble = e.target.closest('.message-bubble');
-            if (!bubble) return;
+            // ★★★ 核心修改：同时获取 group 和 bubble ★★★
+            const bubble = e.target.closest('.message-bubble'); // 用于定位
+            const group = e.target.closest('.message-group');   // 用于获取索引
+
+            if (!group) return;
             
-            const msgIndex = parseInt(bubble.dataset.msgIndex);
+            const msgIndex = parseInt(group.dataset.msgIndex);
             if (isNaN(msgIndex)) return;
 
             longPressTimer = setTimeout(() => {
-                // 桌面端同理，如果选了字就不弹窗
                 if (window.getSelection().toString().length > 0) return;
-                App.showMessageContextMenu(msgIndex, bubble.getBoundingClientRect());
+                
+                // ★★★ 使用 bubble 或 group 的位置来弹出菜单 ★★★
+                const rect = bubble ? bubble.getBoundingClientRect() : group.getBoundingClientRect();
+                App.showMessageContextMenu(msgIndex, rect);
             }, LONG_PRESS_DURATION);
         });
 
+        // 这两行不用改
         UI.els.chatMsgs.addEventListener('mouseup', () => clearTimeout(longPressTimer));
         UI.els.chatMsgs.addEventListener('mouseleave', () => clearTimeout(longPressTimer));
 
@@ -2906,3 +3024,26 @@ function cleanMarkdownForCopy(text) {
 
 // 启动应用
 window.onload = () => App.init();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

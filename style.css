@@ -187,17 +187,28 @@ body {
 /* 原有变量保持不变…… */
 
 /* ========= 1. 恢复横向布局（头像和气泡并排） ========= */
+/* ========= 1. 消息容器基础样式 (修改版) ========= */
 .message-wrapper {
     display: flex;
     align-items: flex-start;
-    gap: 3px;                /* 头像和气泡间距 */
+    gap: 8px; /* 稍微加大一点间距更好看 */
     margin-bottom: 12px;
     max-width: 93%;
-    opacity: 0;
-    animation: slideInUp 0.35s ease-out 0.05s forwards;
-    /* 新增：让内部可以用 position 定位时间戳 */
+    
+    /* ★★★ 关键修改：默认必须是可见的！去掉 opacity: 0 ★★★ */
+    opacity: 1; 
+    
+    /* 这里不要写 animation，否则历史记录也会动 */
     position: relative;
 }
+
+/* ========= 2. 定义入场动画类 (新增) ========= */
+/* 只有带这个类的气泡才会播放动画 */
+.bubble-enter {
+    /* 初始状态：透明且向下偏移 */
+    animation: slideInUp 0.35s ease-out forwards;
+}
+
 
 .message-wrapper.user {
     flex-direction: row-reverse;
@@ -2820,12 +2831,6 @@ body.dark-mode .sb-battery-icon::after {
     unicode-bidi: isolate;
 }
 
-.chat-separator {
-    height: 1px;
-    background-color: rgba(128, 128, 128, 0.2);
-    margin: 12px 20%; /* 上下边距，左右边距20%让它短一点 */
-}
-
 /* 专门处理聊天气泡内的标题标签，覆盖它们的默认样式 */
 .message-bubble h1,
 .message-bubble h2,
@@ -2853,12 +2858,20 @@ body.dark-mode .sb-battery-icon::after {
 /* 分割线 */
 .chat-separator {
     height: 1px;
-    background-color: rgba(233, 233, 233, 0.5);
-    border-radius: 1px;
-    margin: 0px 0 12px 0px;
-    width: 70%; /* 加上宽度限制，确保居中效果 */
-    align-self: center; /* 如果父容器是flex，这有助于居中 */
+    width: 70%;
+    margin: 0 0 12px 0;          /* 上下间距 + 水平居中 */
+    background: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(200, 200, 200, 0.5) 20%,   /* 从左边开始出现 */
+        rgba(180, 180, 180, 0.9) 50%,   /* 中间最深 */
+        rgba(200, 200, 200, 0.5) 80%,
+        transparent 100%
+    );
+    border: none;
+    align-self: center;
 }
+
 
 /* 确保 message-group 允许子元素居中（可选，视你原有的message-group样式而定）*/
 .message-group {
